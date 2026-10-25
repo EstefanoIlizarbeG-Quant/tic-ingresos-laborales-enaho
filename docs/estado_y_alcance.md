@@ -1,8 +1,8 @@
 # Estado y alcance
 
-## Publicación por bloques
+## Contenido publicado
 
-Los dos primeros bloques contienen código, documentación, 27 tablas agregadas y cinco logs históricos revisados. Las figuras se incorporarán en el tercero. La estructura de los CSV, sus valores p y los intervalos disponibles se comprobaron al preparar el segundo bloque. Las comprobaciones de muestras y estimaciones con bases locales corresponden a la preparación previa y se distinguen de una nueva ejecución integral de Stata.
+El repositorio contiene código, documentación, 27 tablas agregadas, cinco logs históricos revisados y 14 figuras de resultados agregados en PNG y SVG. Se comprobaron la estructura de los CSV, sus valores p y los intervalos disponibles. Las figuras se revisaron visualmente y sus archivos superaron las comprobaciones de formato. Cuatro figuras con valores individuales se conservan fuera de la publicación. Las comprobaciones de muestras y estimaciones con bases locales corresponden a la preparación previa y se distinguen de una nueva ejecución integral de Stata.
 
 Las tablas CSV y los logs corresponden a estimaciones ya ejecutadas en Stata y aportadas para organizar el proyecto. La reconstrucción Python utiliza esas salidas. No se realizó una nueva estimación MCO o Heckman durante la preparación del repositorio.
 
@@ -29,4 +29,4 @@ Las comparaciones entre formas educativas, ponderaciones y tipos de trabajador s
 
 La ejecución íntegra del master requiere los módulos originales indicados en la guía y un entorno Stata. Las bases preparadas recibidas permiten reconstruir las figuras actuales. Debe documentarse cualquier cambio posterior en datos, muestra, inferencia o especificaciones.
 
-Los microdatos, listados de observaciones, identificadores de seguimiento y documentos de tesis se conservan en privado. Esta entrega incluye código, documentación y resultados agregados. Las figuras corresponden al tercer bloque de publicación.
+Los microdatos, listados de observaciones, identificadores de seguimiento y documentos de tesis se conservan en privado. El repositorio incluye código, documentación, resultados agregados y figuras.

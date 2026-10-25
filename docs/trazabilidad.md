@@ -58,3 +58,9 @@ Las variantes de 08D modifican etiquetas, orden de columnas y redondeo. Se conse
 Los cinco registros se encuentran en `resultados/logs/`: MCO, sensibilidad, forma funcional educativa, contrastes por tipo de trabajador y Heckman. Todos proceden de ejecuciones previas aportadas por el autor. Se sustituyeron las rutas personales en las copias públicas.
 
 Además, `07_Precios_y_sensibilidad_MCO.log` omite dos salidas de observaciones individuales y `10_Heckman_estimacion_y_pruebas.log` omite una. La omisión se señala en cada ubicación del log. Los coeficientes, las pruebas y los resúmenes agregados se conservan. Los registros originales permanecen en privado.
+
+## Figuras
+
+Se publican 14 de las 18 figuras reconstruidas en Python en `figuras/python/`, con un archivo PNG y otro SVG del mismo nombre para cada figura. La [galería](../figuras/README.md) permite localizar ambos formatos. Las cuatro figuras con valores individuales se conservan fuera del repositorio. Se publican las copias ya preparadas, sin cambiar sus valores ni volver a estimar los modelos durante esta publicación.
+
+`figuras/python/verificacion_reconstruccion.json` registra las comprobaciones de la reconstrucción original, incluidas las muestras MCO y Heckman y los seis R² educativos. Las siete figuras basadas en tablas agregadas también se regeneraron al comprobar los dos primeros bloques.

@@ -1,6 +1,6 @@
 # Reproducción
 
-Ya están disponibles el código, la documentación, las tablas agregadas y cinco logs históricos revisados. Las instrucciones que leen `resultados/tablas/` pueden ejecutarse con los archivos incluidos. Las figuras se publicarán en el tercer bloque. Las bases locales se conservan fuera de esta entrega.
+Están disponibles el código, la documentación, las tablas agregadas, cinco logs históricos revisados y 14 figuras agregadas en PNG y SVG. Las instrucciones que leen `resultados/tablas/` pueden ejecutarse con los archivos incluidos. La [galería](../figuras/README.md) enlaza los archivos publicados. Las bases locales y las cuatro figuras con valores individuales se conservan fuera del repositorio. El programa puede reconstruir las 18 figuras originales al utilizar las bases locales.
 
 ## Figuras con resultados agregados
 

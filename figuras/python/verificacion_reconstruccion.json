@@ -1,0 +1,58 @@
+{
+  "origen_coeficientes": "Tablas CSV exportadas por Stata",
+  "modelos_reestimados": false,
+  "figuras_solo_con_tablas": 7,
+  "educacion": [
+    {
+      "modelo": "M1_Lineal",
+      "r2_reconstruido": 0.3281779566211366,
+      "r2_stata": 0.32817796,
+      "residuo_medio": -1.588996179461516e-14
+    },
+    {
+      "modelo": "M1_Cuadratica",
+      "r2_reconstruido": 0.33608988445359145,
+      "r2_stata": 0.33608988,
+      "residuo_medio": -2.6680063577126553e-14
+    },
+    {
+      "modelo": "M1_Tramos",
+      "r2_reconstruido": 0.3361448200454772,
+      "r2_stata": 0.33614483,
+      "residuo_medio": -2.857746637663207e-14
+    },
+    {
+      "modelo": "M2_Lineal",
+      "r2_reconstruido": 0.349300294076892,
+      "r2_stata": 0.3493003,
+      "residuo_medio": 2.4864079181331157e-14
+    },
+    {
+      "modelo": "M2_Cuadratica",
+      "r2_reconstruido": 0.3538124216369898,
+      "r2_stata": 0.35381243,
+      "residuo_medio": 2.5650730424907243e-14
+    },
+    {
+      "modelo": "M2_Tramos",
+      "r2_reconstruido": 0.35432926135051035,
+      "r2_stata": 0.35432926,
+      "residuo_medio": 9.412282129387876e-15
+    }
+  ],
+  "MCO": {
+    "N": 18065,
+    "usuarios": 7933,
+    "grupos": 772
+  },
+  "Heckman": {
+    "base_amplia": 28476,
+    "estimacion": 28363,
+    "seleccionados": 18069,
+    "anchos_gaussianos": {
+      "0": 0.031194666158163183,
+      "1": 0.02327677845174446
+    }
+  },
+  "figuras_generadas": 18
+}

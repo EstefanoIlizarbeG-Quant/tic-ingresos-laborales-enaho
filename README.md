@@ -6,9 +6,9 @@ Análisis de la relación entre uso de computadora, actividades informáticas e 
 
 El proyecto reúne construcción y validación de datos, estimaciones MCO con errores agrupados, diagnósticos, análisis de sensibilidad y un ejercicio de selección de Heckman. Las estimaciones se realizan en **Stata** y las figuras se reconstruyen en **Python**.
 
-## Estado de publicación
+## Contenido
 
-Ya están disponibles el código, la documentación, 27 tablas agregadas y cinco logs revisados. Las figuras se incorporarán en el tercer bloque.
+El repositorio incluye código, documentación, 27 tablas agregadas, cinco logs revisados y 14 figuras de resultados agregados en PNG y SVG.
 
 | Carpeta o archivo disponible | Contenido |
 |---|---|
@@ -16,6 +16,7 @@ Ya están disponibles el código, la documentación, 27 tablas agregadas y cinco
 | `python/` | Programa de reconstrucción de figuras. |
 | `resultados/tablas/` | 27 tablas agregadas exportadas de Stata. |
 | `resultados/logs/` | Cinco registros históricos con rutas locales sustituidas y listados individuales omitidos cuando corresponde. |
+| `figuras/` | Galería de 14 figuras agregadas, archivos PNG y SVG, y registro de reconstrucción. |
 | `docs/` | Reproducción, alcance y trazabilidad. |
 | `datos/README.md` | Entradas y tratamiento de los datos locales. |
 | `requirements.txt` | Dependencias de Python. |
@@ -79,9 +80,23 @@ python python/graficos_enaho.py --datos-privados /ruta/a/bases_locales
 
 Consulte [los datos requeridos](datos/README.md) y [la trazabilidad](docs/trazabilidad.md).
 
+## Figuras de ejemplo
+
+### Asociaciones TIC por tipo de trabajador
+
+![Asociaciones TIC por tipo de trabajador](figuras/python/08E_tipo_trabajador/01_Asociaciones_TIC_por_tipo.png)
+
+### Sensibilidad a la forma educativa
+
+![Sensibilidad a la forma educativa](figuras/python/08C_educacion/05_Sensibilidad_educacion.png)
+
+Consulte la [galería completa](figuras/README.md) para ver y descargar las 14 figuras publicadas en ambos formatos.
+
 ## Validación y alcance
 
 Se comprobaron la estructura de las 27 tablas, el rango de sus valores p y el orden de los intervalos disponibles. Los CSV conservan los valores exportados por Stata. La generación de las siete figuras se verificó con las tablas incluidas.
+
+Las 14 figuras publicadas se revisaron visualmente y se comprobaron sus archivos PNG y SVG. El [registro de reconstrucción](figuras/python/verificacion_reconstruccion.json) conserva las comprobaciones de la preparación original de 18 figuras, que incluyó las bases locales. Las cuatro figuras con valores de observaciones individuales se conservan fuera del repositorio público.
 
 Las copias Stata adaptan las rutas y añaden una comprobación de configuración; la lógica estadística aportada se conserva. Su ejecución integral sigue pendiente. Los resultados documentados corresponden a ejecuciones previas del autor.
 
