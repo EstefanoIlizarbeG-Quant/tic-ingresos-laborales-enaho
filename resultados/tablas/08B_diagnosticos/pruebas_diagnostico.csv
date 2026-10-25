@@ -1,0 +1,10 @@
+modelo,prueba,F,gl1,gl2,p,N,grupos
+M1_RESET,Potencias del ajuste: Wald agrupado,14.67079899672648,3,771,2.6747338e-09,18065,772
+M1_Educacion2,Educacion al cuadrado,131.6301041164914,1,771,3.0447243e-28,18065,772
+M1_Dispersion,Dispersion: predictores conjuntos,18.59982545180172,6,771,2.8931818e-20,18065,772
+M2_RESET,Potencias del ajuste: Wald agrupado,9.23976912139039,3,771,5.2173418e-06,18065,772
+M2_Educacion2,Educacion al cuadrado,78.3043195733425,1,771,5.9716232e-18,18065,772
+M2_Dispersion,Dispersion: predictores conjuntos,18.46337668400459,6,771,4.0857443e-20,18065,772
+M2_Intensidad2,Curvatura de intensidad conjuntamente,.8555427543128178,2,771,.42545554,18065,772
+M2_TICporAnio,Igualdad temporal de cuatro terminos TIC,.4583203330179341,8,771,.88543177,18065,772
+M2_TICporAnio,Igualdad temporal de TIC e informalidad,.5078374459252699,10,771,.88522696,18065,772

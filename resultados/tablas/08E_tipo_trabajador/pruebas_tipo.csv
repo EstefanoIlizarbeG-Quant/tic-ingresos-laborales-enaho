@@ -1,0 +1,10 @@
+modelo,prueba,F,gl1,gl2,p,N,grupos
+Lineal,Igualdad del bloque TIC entre tipos,4.15531239759537,4,771,.0024536676,18065,772
+Lineal,Igualdad del margen de uso entre tipos,2.449766030848732,2,771,.086985402,18065,772
+Lineal,Igualdad del margen intensivo entre tipos,4.969960796127448,2,771,.007167513,18065,772
+Cuadratica,Igualdad del bloque TIC entre tipos,3.948298394551347,4,771,.003520628,18065,772
+Cuadratica,Igualdad del margen de uso entre tipos,2.595366724123342,2,771,.07527034,18065,772
+Cuadratica,Igualdad del margen intensivo entre tipos,4.251586794240399,2,771,.014576962,18065,772
+Ponderado,Igualdad del bloque TIC entre tipos,1.777899117025649,4,771,.1313017,18065,772
+Ponderado,Igualdad del margen de uso entre tipos,1.389736567438131,2,771,.24976431,18065,772
+Ponderado,Igualdad del margen intensivo entre tipos,1.812184893219728,2,771,.16399181,18065,772

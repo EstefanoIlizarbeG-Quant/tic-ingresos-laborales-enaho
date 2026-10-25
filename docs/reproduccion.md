@@ -1,6 +1,6 @@
 # Reproducción
 
-La primera entrega publica código y documentación. Las instrucciones que leen `resultados/tablas/` requieren las tablas agregadas del segundo bloque; las figuras se publicarán en el tercero. Las bases locales se conservan fuera de esta entrega.
+Ya están disponibles el código, la documentación, las tablas agregadas y cinco logs históricos revisados. Las instrucciones que leen `resultados/tablas/` pueden ejecutarse con los archivos incluidos. Las figuras se publicarán en el tercer bloque. Las bases locales se conservan fuera de esta entrega.
 
 ## Figuras con resultados agregados
 

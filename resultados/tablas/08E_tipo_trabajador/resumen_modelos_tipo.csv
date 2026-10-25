@@ -1,0 +1,4 @@
+modelo,ponderado,N,N_dep,N_empl_ind,grupos,rango,r2,df_resid
+Lineal,0,18065,12220,5845,772,84,.37657496,771
+Cuadratica,0,18065,12220,5845,772,86,.38224953,771
+Ponderado,1,18065,12220,5845,772,84,.344363,771

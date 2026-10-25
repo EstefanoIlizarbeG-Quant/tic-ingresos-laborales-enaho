@@ -1,0 +1,1442 @@
+REGISTRO ORIGINAL DE STATA APORTADO POR EL AUTOR. RUTAS LOCALES SUSTITUIDAS.
+NO ES UNA NUEVA EJECUCION DE ESTA COPIA DEL REPOSITORIO.
+
+------------------------------------------------------------------------------------------------------------------------
+      name:  etapa08e
+       log:  $ENAHO_SALIDA/Complemento_MCO_etapa08E/08E_Contrastes_TIC_por_tip
+> o.log
+  log type:  text
+ opened on:  15 Oct 2026, 07:26:37
+
+. display "INSUMO: `archivo'"
+INSUMO: $ENAHO_SALIDA/base_mco_precios2025_etapa07.dta
+
+. use "`archivo'", clear
+
+. capture drop e8_*
+
+. 
+. * 1. MUESTRA, PRECIOS Y CENTRO FIJO.
+. assert _N == 18065
+
+. local n_base = _N
+
+. isid id_observacion
+
+. isid anio conglome vivienda hogar codperso
+
+. assert muestra_salario_controles_final == 1
+
+. assert inlist(anio, 2023, 2024, 2025)
+
+. assert inlist(tipo_trabajador, 1, 2)
+
+. assert inlist(tic_uso_pc, 0, 1)
+
+. assert inlist(informal, 0, 1)
+
+. assert !missing(educ_years, experiencia_potencial, experiencia2, mujer, casado, jefe_hogar, sector10, ocupacion10_fina
+> l, mes_num, actividades_centradas, id_conglomerado_marco)
+
+. assert fac500a > 0 & !missing(fac500a)
+
+. generate double e8_deflactor = .
+(18,065 missing values generated)
+
+. replace e8_deflactor = 111.04911316666666 / 115.36565525000002 if anio == 2023
+(6,090 real changes made)
+
+. replace e8_deflactor = 113.65953791666665 / 115.36565525000002 if anio == 2024
+(6,004 real changes made)
+
+. replace e8_deflactor = 1 if anio == 2025
+(5,971 real changes made)
+
+. capture confirm variable ln_ing_hora_real2025
+
+. if _rc != 0 generate double ln_ing_hora_real2025 = y_log_ingreso_hora - ln(e8_deflactor)
+
+. assert !missing(ln_ing_hora_real2025)
+
+. assert abs(ln_ing_hora_real2025 - (y_log_ingreso_hora - ln(e8_deflactor))) < 1e-8
+
+. assert missing(tic_actividades_usuarios) if tic_uso_pc == 0
+
+. assert inrange(tic_actividades_usuarios, 0, 9) if tic_uso_pc == 1
+
+. quietly summarize tic_actividades_usuarios if tic_uso_pc == 1, meanonly
+
+. local centro = r(mean)
+
+. assert r(N) == 7933
+
+. assert abs(`centro' - 6.254632547586033) < 1e-8
+
+. assert abs(actividades_centradas - (tic_actividades_usuarios - `centro')) < 1e-6 if tic_uso_pc == 1
+
+. assert actividades_centradas == 0 if tic_uso_pc == 0
+
+. assert ocupacion10_final != 0 if tipo_trabajador == 2
+
+. egen byte e8_tag_marco = tag(id_conglomerado_marco)
+
+. quietly count if e8_tag_marco == 1
+
+. assert r(N) == 772
+
+. quietly count if tipo_trabajador == 1
+
+. assert r(N) == 12220
+
+. quietly count if tipo_trabajador == 2
+
+. assert r(N) == 5845
+
+. tabulate tipo_trabajador informal
+
+                      | Empleo informal para
+                      |  el analisis: reglas
+                      |        V7 y V8
+      tipo_trabajador | Empleo fo  Empleo in |     Total
+----------------------+----------------------+----------
+Dependiente remunerad |     6,455      5,765 |    12,220 
+Empleador o independi |     1,395      4,450 |     5,845 
+----------------------+----------------------+----------
+                Total |     7,850     10,215 |    18,065 
+
+. tabulate tipo_trabajador tic_uso_pc
+
+                      |  Uso de computadora,
+                      |   laptop, tableta o
+                      |  similar: ultimos 3
+                      |         meses
+      tipo_trabajador |         0          1 |     Total
+----------------------+----------------------+----------
+Dependiente remunerad |     5,969      6,251 |    12,220 
+Empleador o independi |     4,163      1,682 |     5,845 
+----------------------+----------------------+----------
+                Total |    10,132      7,933 |    18,065 
+
+. tabulate tipo_trabajador ocupacion10_final, missing
+
+                      |                Gran grupo ocupacional, incluido grupo militar
+      tipo_trabajador | Ocupacion  Directore  Profesion  Tecnicos   Personal   Trabajado  Agriculto |     Total
+----------------------+-----------------------------------------------------------------------------+----------
+Dependiente remunerad |       150        101      1,814      1,692      1,917      1,866          7 |    12,220 
+Empleador o independi |         0         19        426        501          9      1,480         46 |     5,845 
+----------------------+-----------------------------------------------------------------------------+----------
+                Total |       150        120      2,240      2,193      1,926      3,346         53 |    18,065 
+
+
+                      | Gran grupo ocupacional, incluido
+                      |          grupo militar
+      tipo_trabajador | Oficiales  Operadore  Ocupacion |     Total
+----------------------+---------------------------------+----------
+Dependiente remunerad |     1,298        634      2,741 |    12,220 
+Empleador o independi |       895      1,053      1,416 |     5,845 
+----------------------+---------------------------------+----------
+                Total |     2,193      1,687      4,157 |    18,065 
+
+. display "CENTRO FIJO DE ACTIVIDADES: " %12.9f `centro'
+CENTRO FIJO DE ACTIVIDADES:  6.254632548
+
+. display "Referencias: hombre; no casado; no jefe; sector agro/pesca; ocupacion elemental; 2023; enero."
+Referencias: hombre; no casado; no jefe; sector agro/pesca; ocupacion elemental; 2023; enero.
+
+. 
+. * 2. PRODUCTOS PARA PARAMETRIZAR LA COMPARACION.
+. generate byte e8_tipo2 = tipo_trabajador == 2
+
+. generate byte e8_ui = tic_uso_pc * informal
+
+. generate double e8_ai = actividades_centradas * informal
+
+. generate byte e8_tu = e8_tipo2 * tic_uso_pc
+
+. generate double e8_ta = e8_tipo2 * actividades_centradas
+
+. generate byte e8_ti = e8_tipo2 * informal
+
+. generate byte e8_tui = e8_tipo2 * tic_uso_pc * informal
+
+. generate double e8_tai = e8_tipo2 * actividades_centradas * informal
+
+. generate double e8_educ2 = educ_years^2
+
+. 
+. local controles "c.educ_years c.experiencia_potencial c.experiencia2 ib0.mujer ib0.casado ib0.jefe_hogar ib1.sector10 
+> ib9.ocupacion10_final ib2023.anio ib1.mes_num"
+
+. local tic_base "c.tic_uso_pc c.actividades_centradas c.informal c.e8_ui c.e8_ai"
+
+. local tic_tipo "c.e8_tu c.e8_ta c.e8_ti c.e8_tui c.e8_tai"
+
+. 
+. tempname HC HA HD HT HM
+
+. postfile `HC' str16 modelo str64 termino double b se p li ls N grupos using "`resultados'/coeficientes_tipo.dta", repl
+> ace
+
+. postfile `HA' str16 modelo byte tipo informalidad str12 margen double b se p li ls pct pct_li pct_ls N grupos centro u
+> sing "`resultados'/asociaciones_tipo.dta", replace
+
+. postfile `HD' str16 modelo byte orden str12 margen byte informalidad str100 expresion double b se p li ls N grupos usi
+> ng "`resultados'/diferencias_tipo.dta", replace
+
+. postfile `HT' str16 modelo str60 prueba double F gl1 gl2 p N grupos using "`resultados'/pruebas_tipo.dta", replace
+
+. postfile `HM' str16 modelo byte ponderado double N N_dep N_empl_ind grupos rango r2 df_resid using "`resultados'/resum
+> en_modelos_tipo.dta", replace
+
+. 
+. * 3. TRES ESPECIFICACIONES CON LA MISMA MUESTRA Y VCE.
+. foreach modelo in Lineal Cuadratica Ponderado {
+  2.     local covariables "`controles'"
+  3.     local pesos ""
+  4.     local ponderado = 0
+  5.     if "`modelo'" == "Cuadratica" local covariables "`controles' c.e8_educ2"
+  6.     if "`modelo'" == "Ponderado" {
+  7.         local pesos "[pweight=fac500a]"
+  8.         local ponderado = 1
+  9.     }
+ 10.     display _newline "MODELO: `modelo'"
+ 11.     regress ln_ing_hora_real2025 ib1.tipo_trabajador##(`covariables') `tic_base' `tic_tipo' `pesos', vce(cluster id
+> _conglomerado_marco)
+ 12.     assert e(N) == 18065
+ 13.     assert e(N_clust) == 772
+ 14.     assert e(df_r) == 771
+ 15.     assert e(sample) == 1
+ 16.     estimates store E8_`modelo'
+ 17.     estimates save "`resultados'/E8_`modelo'.ster", replace
+ 18.     post `HM' ("`modelo'") (`ponderado') (e(N)) (12220) (5845) (e(N_clust)) (e(rank)) (e(r2)) (e(df_r))
+ 19. 
+.     * Coeficientes: IC t de Stata con los grados de libertad agrupados.
+.     tempname B V bb ss pp ll uu crit
+ 20.     matrix `B' = e(b)
+ 21.     matrix `V' = e(V)
+ 22.     local terminos : colnames `B'
+ 23.     scalar `crit' = invttail(e(df_r), 0.025)
+ 24.     forvalues j = 1/`=colsof(`B')' {
+ 25.         local termino : word `j' of `terminos'
+ 26.         scalar `bb' = `B'[1, `j']
+ 27.         scalar `ss' = sqrt(`V'[`j', `j'])
+ 28.         if `ss' > 0 & !missing(`ss') {
+ 29.             scalar `pp' = 2 * ttail(e(df_r), abs(`bb'/`ss'))
+ 30.             scalar `ll' = `bb' - `crit' * `ss'
+ 31.             scalar `uu' = `bb' + `crit' * `ss'
+ 32.             post `HC' ("`modelo'") ("`termino'") (`bb') (`ss') (`pp') (`ll') (`uu') (e(N)) (e(N_clust))
+ 33.         }
+ 34.     }
+ 35. 
+.     * Asociaciones para las ocho combinaciones: tipo x informalidad x margen.
+.     forvalues tipo = 1/2 {
+ 36.         forvalues inf = 0/1 {
+ 37.             foreach margen in Uso Intensidad {
+ 38.                 local expresion "tic_uso_pc"
+ 39.                 if "`margen'" == "Uso" {
+ 40.                     if `inf' == 1 local expresion "`expresion' + e8_ui"
+ 41.                     if `tipo' == 2 local expresion "`expresion' + e8_tu"
+ 42.                     if `tipo' == 2 & `inf' == 1 local expresion "`expresion' + e8_tui"
+ 43.                 }
+ 44.                 if "`margen'" == "Intensidad" {
+ 45.                     local expresion "actividades_centradas"
+ 46.                     if `inf' == 1 local expresion "`expresion' + e8_ai"
+ 47.                     if `tipo' == 2 local expresion "`expresion' + e8_ta"
+ 48.                     if `tipo' == 2 & `inf' == 1 local expresion "`expresion' + e8_tai"
+ 49.                 }
+ 50.                 display "Tipo=`tipo'; informalidad=`inf'; margen=`margen'"
+ 51.                 lincom `expresion'
+ 52.                 post `HA' ("`modelo'") (`tipo') (`inf') ("`margen'") (r(estimate)) (r(se)) (r(p)) (r(lb)) (r(ub)) (
+> 100*(exp(r(estimate))-1)) (100*(exp(r(lb))-1)) (100*(exp(r(ub))-1)) (e(N)) (e(N_clust)) (`centro')
+ 53.             }
+ 54.         }
+ 55.     }
+ 56. 
+.     * Diferencias: grupo 2 menos grupo 1, en LOG PUNTOS.
+.     * Exp(diferencia)-1 es una razon de asociaciones, no una diferencia
+.     * de sus primas porcentuales. La figura de diferencias usa log puntos.
+.     local orden = 0
+ 57.     foreach margen in Uso Intensidad {
+ 58.         forvalues inf = 0/1 {
+ 59.             local orden = `orden' + 1
+ 60.             local expresion "e8_tu"
+ 61.             if "`margen'" == "Uso" & `inf' == 1 local expresion "e8_tu + e8_tui"
+ 62.             if "`margen'" == "Intensidad" local expresion "e8_ta"
+ 63.             if "`margen'" == "Intensidad" & `inf' == 1 local expresion "e8_ta + e8_tai"
+ 64.             lincom `expresion'
+ 65.             post `HD' ("`modelo'") (`orden') ("`margen'") (`inf') ("`expresion'") (r(estimate)) (r(se)) (r(p)) (r(l
+> b)) (r(ub)) (e(N)) (e(N_clust))
+ 66.         }
+ 67.     }
+ 68. 
+.     * Las cuatro diferencias son cero si y solo si estos cuatro
+.     * coeficientes de interaccion son conjuntamente cero.
+.     test e8_tu e8_tui e8_ta e8_tai
+ 69.     local df_conjunto = r(df)
+ 70.     post `HT' ("`modelo'") ("Igualdad del bloque TIC entre tipos") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(N_clus
+> t))
+ 71.     assert `df_conjunto' == 4
+ 72.     test e8_tu e8_tui
+ 73.     post `HT' ("`modelo'") ("Igualdad del margen de uso entre tipos") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(N_c
+> lust))
+ 74.     test e8_ta e8_tai
+ 75.     post `HT' ("`modelo'") ("Igualdad del margen intensivo entre tipos") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(
+> N_clust))
+ 76. }
+
+MODELO: Lineal
+note: 2.tipo_trabajador#0.ocupacion10_final identifies no observations in the sample.
+
+Linear regression                               Number of obs     =     18,065
+                                                F(83, 771)        =          .
+                                                Prob > F          =          .
+                                                R-squared         =     0.3766
+                                                Root MSE          =     .70397
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                      tipo_trabajador |
+                           Empleador o independiente  |   .2203427   .2590124     0.85   0.395    -.2881105    .7287958
+                                           educ_years |   .0544802    .002747    19.83   0.000     .0490876    .0598727
+                                experiencia_potencial |   .0148324   .0014809    10.02   0.000     .0119253    .0177396
+                                         experiencia2 |  -.0001811   .0000314    -5.76   0.000    -.0002428   -.0001194
+                                              1.mujer |  -.1031582    .011134    -9.27   0.000    -.1250147   -.0813017
+                                             1.casado |   .0888161   .0146544     6.06   0.000     .0600488    .1175834
+                                         1.jefe_hogar |   .1056943   .0118263     8.94   0.000     .0824787    .1289098
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1881718   .0982751     1.91   0.056    -.0047466    .3810902
+                                         Manufactura  |  -.1001672   .0670155    -1.49   0.135    -.2317218    .0313873
+                       Servicios publicos y residuos  |  -.0142589    .088099    -0.16   0.871    -.1872012    .1586834
+                                        Construccion  |   .1376342   .0686607     2.00   0.045       .00285    .2724183
+                                            Comercio  |  -.1667941   .0678221    -2.46   0.014    -.2999319   -.0336563
+                    Transporte, alojamiento y comida  |  -.1262606   .0677691    -1.86   0.063    -.2592945    .0067733
+     Informacion, finanzas y servicios empresariales  |  -.1163156   .0676952    -1.72   0.086    -.2492044    .0165733
+           Administracion publica, educacion y salud  |   -.017867   .0681522    -0.26   0.793    -.1516529    .1159189
+                                     Otros servicios  |  -.0524955   .0689738    -0.76   0.447    -.1878942    .0829031
+                                                      |
+                                    ocupacion10_final |
+                               Ocupaciones militares  |   .3417471   .0391847     8.72   0.000     .2648258    .4186684
+                               Directores y gerentes  |    1.09401   .0653608    16.74   0.000     .9657043    1.222317
+           Profesionales cientificos e intelectuales  |   .5160896   .0232015    22.24   0.000      .470544    .5616353
+             Tecnicos y profesionales de nivel medio  |   .2795754   .0209218    13.36   0.000      .238505    .3206459
+                    Personal de apoyo administrativo  |   .2191834   .0178544    12.28   0.000     .1841344    .2542325
+              Trabajadores de servicios y vendedores  |  -.0010493   .0174763    -0.06   0.952    -.0353561    .0332575
+Agricultores y trabajadores agropecuarios califica..  |  -.0076296   .1104655    -0.07   0.945    -.2244784    .2092192
+                    Oficiales, operarios y artesanos  |   .0520771   .0202571     2.57   0.010     .0123115    .0918427
+              Operadores de instalaciones y maquinas  |   .0679895   .0227198     2.99   0.003     .0233894    .1125896
+                                                      |
+                                                 anio |
+                                                2024  |  -.0175873   .0128188    -1.37   0.170    -.0427511    .0075766
+                                                2025  |   .0305105   .0125741     2.43   0.015      .005827    .0551941
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0027034   .0294008    -0.09   0.927    -.0604186    .0550118
+                                                   3  |   .0225155   .0286082     0.79   0.432    -.0336437    .0786747
+                                                   4  |  -.0221701   .0317563    -0.70   0.485    -.0845091    .0401689
+                                                   5  |  -.0111345   .0297625    -0.37   0.708    -.0695596    .0472906
+                                                   6  |  -.0422848   .0320177    -1.32   0.187    -.1051371    .0205675
+                                                   7  |  -.0089268   .0305467    -0.29   0.770    -.0688913    .0510377
+                                                   8  |  -.0514356   .0292302    -1.76   0.079    -.1088159    .0059446
+                                                   9  |  -.0063798    .031442    -0.20   0.839    -.0681019    .0553423
+                                                  10  |   .0120683   .0296784     0.41   0.684    -.0461919    .0703284
+                                                  11  |  -.0065791   .0324878    -0.20   0.840    -.0703542     .057196
+                                                  12  |   -.032656   .0307921    -1.06   0.289    -.0931022    .0277903
+                                                      |
+                         tipo_trabajador#c.educ_years |
+                           Empleador o independiente  |   -.012499   .0064618    -1.93   0.053    -.0251838    .0001859
+                                                      |
+              tipo_trabajador#c.experiencia_potencial |
+                           Empleador o independiente  |  -.0018222   .0044217    -0.41   0.680    -.0105023    .0068579
+                                                      |
+                       tipo_trabajador#c.experiencia2 |
+                           Empleador o independiente  |  -.0000341   .0000806    -0.42   0.673    -.0001924    .0001242
+                                                      |
+                                tipo_trabajador#mujer |
+                         Empleador o independiente#1  |  -.1586203    .033091    -4.79   0.000    -.2235795   -.0936612
+                                                      |
+                               tipo_trabajador#casado |
+                         Empleador o independiente#1  |  -.0148439   .0369853    -0.40   0.688    -.0874476    .0577599
+                                                      |
+                           tipo_trabajador#jefe_hogar |
+                         Empleador o independiente#1  |   .0925098   .0309452     2.99   0.003      .031763    .1532566
+                                                      |
+                             tipo_trabajador#sector10 |
+                   Empleador o independiente#Mineria  |   -.085409   .2413196    -0.35   0.723    -.5591303    .3883124
+               Empleador o independiente#Manufactura  |   .2090386   .2276263     0.92   0.359    -.2378022    .6558795
+                           Empleador o independiente #|
+                       Servicios publicos y residuos  |  -.5217471   .2543493    -2.05   0.041    -1.021046   -.0224479
+              Empleador o independiente#Construccion  |   .3344388   .2274171     1.47   0.142    -.1119913    .7808689
+                  Empleador o independiente#Comercio  |  -.0414545    .221133    -0.19   0.851    -.4755486    .3926396
+                           Empleador o independiente #|
+                    Transporte, alojamiento y comida  |   .3041757   .2258896     1.35   0.179    -.1392559    .7476073
+                           Empleador o independiente #|
+     Informacion, finanzas y servicios empresariales  |   .4641379   .2216797     2.09   0.037     .0289706    .8993052
+                           Empleador o independiente #|
+           Administracion publica, educacion y salud  |   .6454824   .2313306     2.79   0.005     .1913698    1.099595
+           Empleador o independiente#Otros servicios  |   .3098221   .2249443     1.38   0.169    -.1317539    .7513981
+                                                      |
+                    tipo_trabajador#ocupacion10_final |
+     Empleador o independiente#Ocupaciones militares  |          0  (empty)
+     Empleador o independiente#Directores y gerentes  |  -.5688361   .2307615    -2.47   0.014    -1.021831   -.1158408
+                           Empleador o independiente #|
+           Profesionales cientificos e intelectuales  |  -.4844767   .0713032    -6.79   0.000    -.6244482   -.3445052
+                           Empleador o independiente #|
+             Tecnicos y profesionales de nivel medio  |  -.0873052   .0690219    -1.26   0.206    -.2227983    .0481879
+                           Empleador o independiente #|
+                    Personal de apoyo administrativo  |  -.6897533   .2021892    -3.41   0.001     -1.08666   -.2928467
+                           Empleador o independiente #|
+              Trabajadores de servicios y vendedores  |  -.1880725   .0508616    -3.70   0.000    -.2879161   -.0882288
+                           Empleador o independiente #|
+Agricultores y trabajadores agropecuarios califica..  |   -.084282    .305232    -0.28   0.783    -.6834664    .5149024
+                           Empleador o independiente #|
+                    Oficiales, operarios y artesanos  |  -.1926744   .0737944    -2.61   0.009    -.3375363   -.0478126
+                           Empleador o independiente #|
+              Operadores de instalaciones y maquinas  |   -.261934   .0570002    -4.60   0.000     -.373828   -.1500399
+                                                      |
+                                 tipo_trabajador#anio |
+                      Empleador o independiente#2024  |   .0021915   .0378213     0.06   0.954    -.0720533    .0764364
+                      Empleador o independiente#2025  |  -.0385317   .0339151    -1.14   0.256    -.1051085    .0280451
+                                                      |
+                              tipo_trabajador#mes_num |
+                        Empleador o independiente# 2  |  -.0812145   .0805571    -1.01   0.314    -.2393518    .0769228
+                        Empleador o independiente# 3  |  -.0728397    .073168    -1.00   0.320    -.2164718    .0707924
+                        Empleador o independiente# 4  |   -.020647    .073729    -0.28   0.780    -.1653804    .1240863
+                        Empleador o independiente# 5  |   .0143451   .0789805     0.18   0.856    -.1406973    .1693875
+                        Empleador o independiente# 6  |    .003159    .075869     0.04   0.967    -.1457753    .1520933
+                        Empleador o independiente# 7  |  -.0489933   .0759896    -0.64   0.519    -.1981644    .1001777
+                        Empleador o independiente# 8  |  -.1413991   .0796425    -1.78   0.076     -.297741    .0149428
+                        Empleador o independiente# 9  |  -.1599943   .0765876    -2.09   0.037    -.3103392   -.0096495
+                        Empleador o independiente#10  |  -.1453371   .0811474    -1.79   0.074    -.3046331     .013959
+                        Empleador o independiente#11  |  -.1132384   .0759148    -1.49   0.136    -.2622626    .0357859
+                        Empleador o independiente#12  |  -.1269111    .069794    -1.82   0.069    -.2639198    .0100977
+                                                      |
+                                           tic_uso_pc |   .2553006    .015531    16.44   0.000     .2248125    .2857887
+                                actividades_centradas |   .0302998   .0043413     6.98   0.000     .0217777    .0388219
+                                             informal |  -.0575824   .0140462    -4.10   0.000    -.0851557    -.030009
+                                                e8_ui |  -.1086062   .0219673    -4.94   0.000    -.1517289   -.0654835
+                                                e8_ai |  -.0168506   .0068195    -2.47   0.014    -.0302375   -.0034637
+                                                e8_tu |   .1436754   .0681055     2.11   0.035     .0099812    .2773696
+                                                e8_ta |  -.0522088   .0167148    -3.12   0.002    -.0850206    -.019397
+                                                e8_ti |  -.2485216   .0553036    -4.49   0.000    -.3570851   -.1399582
+                                               e8_tui |  -.0884277   .0720977    -1.23   0.220    -.2299588    .0531035
+                                               e8_tai |   .0490298   .0223852     2.19   0.029     .0050865     .092973
+                                                _cons |   1.141867   .0785772    14.53   0.000     .9876164    1.296118
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/E8_Lineal.ster saved
+Tipo=1; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2553006    .015531    16.44   0.000     .2248125    .2857887
+------------------------------------------------------------------------------
+Tipo=1; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0302998   .0043413     6.98   0.000     .0217777    .0388219
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1466944   .0191268     7.67   0.000     .1091477    .1842412
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0134492   .0054945     2.45   0.015     .0026633    .0242351
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |    .398976   .0663673     6.01   0.000     .2686939     .529258
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   -.021909   .0161196    -1.36   0.174    -.0535524    .0097344
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui + e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2019421   .0431112     4.68   0.000     .1173128    .2865714
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai + e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0102702   .0127682     0.80   0.421    -.0147944    .0353347
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1436754   .0681055     2.11   0.035     .0099812    .2773696
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0552477   .0466388     1.18   0.237    -.0363063    .1468017
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0522088   .0167148    -3.12   0.002    -.0850206    -.019397
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   -.003179   .0138665    -0.23   0.819    -.0303996    .0240416
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+ ( 3)  e8_ta = 0
+ ( 4)  e8_tai = 0
+
+       F(  4,   771) =    4.16
+            Prob > F =    0.0025
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+
+       F(  2,   771) =    2.45
+            Prob > F =    0.0870
+
+ ( 1)  e8_ta = 0
+ ( 2)  e8_tai = 0
+
+       F(  2,   771) =    4.97
+            Prob > F =    0.0072
+
+MODELO: Cuadratica
+note: 2.tipo_trabajador#0.ocupacion10_final identifies no observations in the sample.
+
+Linear regression                               Number of obs     =     18,065
+                                                F(85, 771)        =          .
+                                                Prob > F          =          .
+                                                R-squared         =     0.3822
+                                                Root MSE          =      .7008
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                      tipo_trabajador |
+                           Empleador o independiente  |  -.3542513   .2755571    -1.29   0.199    -.8951825    .1866798
+                                           educ_years |  -.0823846   .0099918    -8.25   0.000    -.1019989   -.0627703
+                                experiencia_potencial |   .0169391   .0014711    11.51   0.000     .0140512     .019827
+                                         experiencia2 |  -.0002536   .0000312    -8.13   0.000    -.0003149   -.0001924
+                                              1.mujer |  -.1107479   .0109051   -10.16   0.000    -.1321552   -.0893406
+                                             1.casado |    .087334   .0141418     6.18   0.000      .059573    .1150949
+                                         1.jefe_hogar |   .0974412   .0115883     8.41   0.000     .0746928    .1201895
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1711448   .0974062     1.76   0.079     -.020068    .3623577
+                                         Manufactura  |  -.0832074   .0691907    -1.20   0.230    -.2190319     .052617
+                       Servicios publicos y residuos  |  -.0147361   .0898302    -0.16   0.870    -.1910768    .1616046
+                                        Construccion  |   .1476053   .0709526     2.08   0.038      .008322    .2868885
+                                            Comercio  |  -.1488297   .0700734    -2.12   0.034    -.2863869   -.0112724
+                    Transporte, alojamiento y comida  |  -.1058501   .0699151    -1.51   0.130    -.2430967    .0313964
+     Informacion, finanzas y servicios empresariales  |   -.097987   .0700581    -1.40   0.162    -.2355143    .0395402
+           Administracion publica, educacion y salud  |  -.0085984   .0701061    -0.12   0.902    -.1462198     .129023
+                                     Otros servicios  |  -.0386253   .0709221    -0.54   0.586    -.1778486    .1005979
+                                                      |
+                                    ocupacion10_final |
+                               Ocupaciones militares  |   .3440859   .0388646     8.85   0.000      .267793    .4203788
+                               Directores y gerentes  |   .9687925   .0631112    15.35   0.000     .8449024    1.092683
+           Profesionales cientificos e intelectuales  |   .4134545   .0241546    17.12   0.000     .3660379    .4608711
+             Tecnicos y profesionales de nivel medio  |   .2535961   .0211711    11.98   0.000     .2120363    .2951559
+                    Personal de apoyo administrativo  |   .1964453   .0178445    11.01   0.000     .1614158    .2314748
+              Trabajadores de servicios y vendedores  |   .0099131   .0176171     0.56   0.574    -.0246702    .0444963
+Agricultores y trabajadores agropecuarios califica..  |   .0053699   .1230623     0.04   0.965     -.236207    .2469468
+                    Oficiales, operarios y artesanos  |   .0623726   .0199677     3.12   0.002     .0231751      .10157
+              Operadores de instalaciones y maquinas  |   .0816459   .0224294     3.64   0.000      .037616    .1256757
+                                                      |
+                                                 anio |
+                                                2024  |  -.0154355   .0126787    -1.22   0.224    -.0403243    .0094534
+                                                2025  |   .0273544   .0125458     2.18   0.030     .0027265    .0519823
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0038765   .0282763    -0.14   0.891    -.0593842    .0516313
+                                                   3  |   .0269931   .0281859     0.96   0.339    -.0283372    .0823233
+                                                   4  |  -.0205112   .0304136    -0.67   0.500    -.0802146    .0391921
+                                                   5  |  -.0035674   .0291741    -0.12   0.903    -.0608375    .0537027
+                                                   6  |  -.0354217   .0307765    -1.15   0.250    -.0958373     .024994
+                                                   7  |  -.0042642   .0295277    -0.14   0.885    -.0622285    .0537001
+                                                   8  |  -.0435233   .0281562    -1.55   0.123    -.0987952    .0117485
+                                                   9  |  -.0023298   .0299645    -0.08   0.938    -.0611515    .0564919
+                                                  10  |   .0125138   .0290369     0.43   0.667    -.0444869    .0695146
+                                                  11  |  -.0079074    .031119    -0.25   0.799    -.0689953    .0531806
+                                                  12  |  -.0288882   .0299177    -0.97   0.335    -.0876181    .0298416
+                                                      |
+                                             e8_educ2 |   .0062052   .0004552    13.63   0.000     .0053117    .0070987
+                                                      |
+                         tipo_trabajador#c.educ_years |
+                           Empleador o independiente  |    .082544   .0239321     3.45   0.001     .0355643    .1295237
+                                                      |
+              tipo_trabajador#c.experiencia_potencial |
+                           Empleador o independiente  |  -.0029944   .0044366    -0.67   0.500    -.0117037    .0057149
+                                                      |
+                       tipo_trabajador#c.experiencia2 |
+                           Empleador o independiente  |   .0000126   .0000816     0.15   0.877    -.0001475    .0001727
+                                                      |
+                                tipo_trabajador#mujer |
+                         Empleador o independiente#1  |  -.1568716   .0332411    -4.72   0.000    -.2221254   -.0916177
+                                                      |
+                               tipo_trabajador#casado |
+                         Empleador o independiente#1  |  -.0135098   .0369157    -0.37   0.714    -.0859771    .0589574
+                                                      |
+                           tipo_trabajador#jefe_hogar |
+                         Empleador o independiente#1  |   .1020891   .0309074     3.30   0.001     .0414165    .1627616
+                                                      |
+                             tipo_trabajador#sector10 |
+                   Empleador o independiente#Mineria  |  -.0416795   .2445425    -0.17   0.865    -.5217276    .4383685
+               Empleador o independiente#Manufactura  |   .2338546   .2325844     1.01   0.315    -.2227192    .6904284
+                           Empleador o independiente #|
+                       Servicios publicos y residuos  |  -.4910581   .2590641    -1.90   0.058    -.9996128    .0174966
+              Empleador o independiente#Construccion  |   .3691688   .2326557     1.59   0.113    -.0875449    .8258826
+                  Empleador o independiente#Comercio  |  -.0178211   .2257987    -0.08   0.937    -.4610742     .425432
+                           Empleador o independiente #|
+                    Transporte, alojamiento y comida  |   .3245399   .2305074     1.41   0.160    -.1279566    .7770364
+                           Empleador o independiente #|
+     Informacion, finanzas y servicios empresariales  |   .4907451   .2264244     2.17   0.031     .0462637    .9352265
+                           Empleador o independiente #|
+           Administracion publica, educacion y salud  |   .6783587   .2360782     2.87   0.004     .2149264    1.141791
+           Empleador o independiente#Otros servicios  |   .3398418   .2299082     1.48   0.140    -.1114786    .7911621
+                                                      |
+                    tipo_trabajador#ocupacion10_final |
+     Empleador o independiente#Ocupaciones militares  |          0  (empty)
+     Empleador o independiente#Directores y gerentes  |  -.4913204   .2305958    -2.13   0.033    -.9439906   -.0386503
+                           Empleador o independiente #|
+           Profesionales cientificos e intelectuales  |  -.4265853   .0733738    -5.81   0.000    -.5706214   -.2825492
+                           Empleador o independiente #|
+             Tecnicos y profesionales de nivel medio  |  -.0728023   .0695726    -1.05   0.296    -.2093765    .0637719
+                           Empleador o independiente #|
+                    Personal de apoyo administrativo  |  -.6934632   .2001461    -3.46   0.001    -1.086359   -.3005673
+                           Empleador o independiente #|
+              Trabajadores de servicios y vendedores  |  -.1961094   .0508517    -3.86   0.000    -.2959337   -.0962851
+                           Empleador o independiente #|
+Agricultores y trabajadores agropecuarios califica..  |  -.0664793   .3148281    -0.21   0.833    -.6845012    .5515426
+                           Empleador o independiente #|
+                    Oficiales, operarios y artesanos  |  -.1983331    .073754    -2.69   0.007    -.3431155   -.0535507
+                           Empleador o independiente #|
+              Operadores de instalaciones y maquinas  |  -.2724551   .0571297    -4.77   0.000    -.3846033   -.1603068
+                                                      |
+                                 tipo_trabajador#anio |
+                      Empleador o independiente#2024  |   .0009327   .0378701     0.02   0.980     -.073408    .0752734
+                      Empleador o independiente#2025  |  -.0345934   .0338713    -1.02   0.307    -.1010844    .0318976
+                                                      |
+                              tipo_trabajador#mes_num |
+                        Empleador o independiente# 2  |  -.0816229   .0800974    -1.02   0.309    -.2388577     .075612
+                        Empleador o independiente# 3  |  -.0762149   .0731329    -1.04   0.298     -.219778    .0673483
+                        Empleador o independiente# 4  |  -.0240552   .0731137    -0.33   0.742    -.1675808    .1194703
+                        Empleador o independiente# 5  |   .0077212   .0787073     0.10   0.922    -.1467847    .1622272
+                        Empleador o independiente# 6  |  -.0038826   .0757102    -0.05   0.959    -.1525052      .14474
+                        Empleador o independiente# 7  |  -.0533105   .0751133    -0.71   0.478    -.2007613    .0941404
+                        Empleador o independiente# 8  |  -.1474354   .0797322    -1.85   0.065    -.3039533    .0090825
+                        Empleador o independiente# 9  |  -.1630378   .0759109    -2.15   0.032    -.3120545   -.0140211
+                        Empleador o independiente#10  |  -.1442152   .0812545    -1.77   0.076    -.3037215    .0152911
+                        Empleador o independiente#11  |  -.1127858   .0753885    -1.50   0.135    -.2607769    .0352054
+                        Empleador o independiente#12  |  -.1261343   .0693996    -1.82   0.070     -.262369    .0101004
+                                                      |
+                           tipo_trabajador#c.e8_educ2 |
+                           Empleador o independiente  |  -.0040211   .0011195    -3.59   0.000    -.0062186   -.0018235
+                                                      |
+                                           tic_uso_pc |    .217468   .0153934    14.13   0.000       .18725    .2476861
+                                actividades_centradas |   .0235645   .0042339     5.57   0.000     .0152531    .0318759
+                                             informal |  -.0691201    .013689    -5.05   0.000    -.0959923   -.0422479
+                                                e8_ui |  -.0826374   .0216581    -3.82   0.000    -.1251533   -.0401215
+                                                e8_ai |  -.0131868   .0067225    -1.96   0.050    -.0263834    9.83e-06
+                                                e8_tu |   .1503825   .0682246     2.20   0.028     .0164545    .2843106
+                                                e8_ta |  -.0489932   .0169002    -2.90   0.004     -.082169   -.0158174
+                                                e8_ti |  -.2336737   .0552929    -4.23   0.000    -.3422162   -.1251313
+                                               e8_tui |   -.099173   .0721243    -1.38   0.170    -.2407563    .0424102
+                                               e8_tai |   .0469231   .0224555     2.09   0.037     .0028419    .0910042
+                                                _cons |   1.850824   .0912224    20.29   0.000      1.67175    2.029898
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/E8_Cuadratica.ster saved
+Tipo=1; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |    .217468   .0153934    14.13   0.000       .18725    .2476861
+------------------------------------------------------------------------------
+Tipo=1; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0235645   .0042339     5.57   0.000     .0152531    .0318759
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1348307   .0190972     7.06   0.000      .097342    .1723193
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0103777   .0055322     1.88   0.061    -.0004823    .0212378
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .3678506   .0661446     5.56   0.000     .2380058    .4976954
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0254287   .0162719    -1.56   0.119    -.0573712    .0065138
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui + e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1860401    .042702     4.36   0.000     .1022141    .2698662
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai + e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0083076   .0127297     0.65   0.514    -.0166814    .0332966
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1503825   .0682246     2.20   0.028     .0164545    .2843106
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0512095    .046101     1.11   0.267    -.0392889    .1417079
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0489932   .0169002    -2.90   0.004     -.082169   -.0158174
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0020701    .013856    -0.15   0.881    -.0292702    .0251299
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+ ( 3)  e8_ta = 0
+ ( 4)  e8_tai = 0
+
+       F(  4,   771) =    3.95
+            Prob > F =    0.0035
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+
+       F(  2,   771) =    2.60
+            Prob > F =    0.0753
+
+ ( 1)  e8_ta = 0
+ ( 2)  e8_tai = 0
+
+       F(  2,   771) =    4.25
+            Prob > F =    0.0146
+
+MODELO: Ponderado
+(sum of wgt is 15,847,755.034637)
+note: 2.tipo_trabajador#0.ocupacion10_final identifies no observations in the sample.
+
+Linear regression                               Number of obs     =     18,065
+                                                F(84, 771)        =     181.87
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3444
+                                                Root MSE          =      .6913
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                      tipo_trabajador |
+                           Empleador o independiente  |   .2649197   .3021781     0.88   0.381    -.3282696    .8581091
+                                           educ_years |   .0477518   .0028855    16.55   0.000     .0420874    .0534162
+                                experiencia_potencial |   .0148052   .0017444     8.49   0.000     .0113809    .0182294
+                                         experiencia2 |  -.0001829   .0000376    -4.86   0.000    -.0002568   -.0001091
+                                              1.mujer |  -.1061125   .0127341    -8.33   0.000    -.1311101    -.081115
+                                             1.casado |   .0735056   .0162383     4.53   0.000     .0416291    .1053822
+                                         1.jefe_hogar |   .0937973   .0124115     7.56   0.000     .0694329    .1181617
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1310047   .1259943     1.04   0.299    -.1163278    .3783372
+                                         Manufactura  |  -.1400205   .0672657    -2.08   0.038    -.2720661   -.0079749
+                       Servicios publicos y residuos  |  -.0751456   .1048763    -0.72   0.474    -.2810225    .1307313
+                                        Construccion  |     .10135   .0700615     1.45   0.148    -.0361839    .2388839
+                                            Comercio  |  -.1869573    .067467    -2.77   0.006    -.3193981   -.0545164
+                    Transporte, alojamiento y comida  |  -.1574873   .0685632    -2.30   0.022    -.2920799   -.0228946
+     Informacion, finanzas y servicios empresariales  |  -.1326331   .0682071    -1.94   0.052    -.2665267    .0012604
+           Administracion publica, educacion y salud  |  -.0361338    .068879    -0.52   0.600    -.1713463    .0990788
+                                     Otros servicios  |  -.0498715   .0693346    -0.72   0.472    -.1859785    .0862356
+                                                      |
+                                    ocupacion10_final |
+                               Ocupaciones militares  |   .3387549   .0520433     6.51   0.000     .2365915    .4409182
+                               Directores y gerentes  |   1.133325   .0725805    15.61   0.000     .9908466    1.275804
+           Profesionales cientificos e intelectuales  |   .5243363   .0276936    18.93   0.000     .4699725    .5787001
+             Tecnicos y profesionales de nivel medio  |   .2855882    .027658    10.33   0.000     .2312943    .3398822
+                    Personal de apoyo administrativo  |   .1981874   .0213015     9.30   0.000     .1563717    .2400032
+              Trabajadores de servicios y vendedores  |   .0100327    .021365     0.47   0.639    -.0319078    .0519731
+Agricultores y trabajadores agropecuarios califica..  |  -.0364987   .1186834    -0.31   0.759    -.2694797    .1964822
+                    Oficiales, operarios y artesanos  |   .0747059     .02334     3.20   0.001     .0288885    .1205233
+              Operadores de instalaciones y maquinas  |   .0935136   .0260968     3.58   0.000     .0422844    .1447427
+                                                      |
+                                                 anio |
+                                                2024  |  -.0200572   .0149902    -1.34   0.181    -.0494837    .0093693
+                                                2025  |   .0305819   .0143481     2.13   0.033     .0024159    .0587479
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0223986   .0298292    -0.75   0.453    -.0809547    .0361576
+                                                   3  |   .0197063    .030802     0.64   0.523    -.0407593     .080172
+                                                   4  |  -.0280846   .0327185    -0.86   0.391    -.0923125    .0361433
+                                                   5  |   -.019806   .0315418    -0.63   0.530     -.081724     .042112
+                                                   6  |  -.0578452   .0317816    -1.82   0.069     -.120234    .0045436
+                                                   7  |   .0002467   .0294233     0.01   0.993    -.0575126    .0580059
+                                                   8  |   -.057622   .0307593    -1.87   0.061    -.1180039    .0027599
+                                                   9  |  -.0326795    .028601    -1.14   0.254    -.0888246    .0234656
+                                                  10  |  -.0046239   .0290937    -0.16   0.874    -.0617362    .0524883
+                                                  11  |  -.0254785   .0323792    -0.79   0.432    -.0890402    .0380833
+                                                  12  |   -.019605   .0293341    -0.67   0.504    -.0771891    .0379791
+                                                      |
+                         tipo_trabajador#c.educ_years |
+                           Empleador o independiente  |   -.008078   .0077016    -1.05   0.295    -.0231966    .0070407
+                                                      |
+              tipo_trabajador#c.experiencia_potencial |
+                           Empleador o independiente  |  -.0039509   .0050457    -0.78   0.434    -.0138558     .005954
+                                                      |
+                       tipo_trabajador#c.experiencia2 |
+                           Empleador o independiente  |  -.0000124   .0000917    -0.14   0.893    -.0001925    .0001677
+                                                      |
+                                tipo_trabajador#mujer |
+                         Empleador o independiente#1  |  -.1443547   .0392746    -3.68   0.000    -.2214526   -.0672569
+                                                      |
+                               tipo_trabajador#casado |
+                         Empleador o independiente#1  |   .0233024    .042059     0.55   0.580    -.0592612    .1058661
+                                                      |
+                           tipo_trabajador#jefe_hogar |
+                         Empleador o independiente#1  |   .0867781   .0351278     2.47   0.014     .0178205    .1557357
+                                                      |
+                             tipo_trabajador#sector10 |
+                   Empleador o independiente#Mineria  |  -.0173604   .2915445    -0.06   0.953    -.5896755    .5549547
+               Empleador o independiente#Manufactura  |   .2562544   .2681992     0.96   0.340    -.2702329    .7827416
+                           Empleador o independiente #|
+                       Servicios publicos y residuos  |  -.4799077   .3199027    -1.50   0.134    -1.107891    .1480759
+              Empleador o independiente#Construccion  |   .4232596   .2687762     1.57   0.116    -.1043603    .9508795
+                  Empleador o independiente#Comercio  |   -.043297   .2635386    -0.16   0.870    -.5606354    .4740413
+                           Empleador o independiente #|
+                    Transporte, alojamiento y comida  |   .3179736   .2660567     1.20   0.232    -.2043078     .840255
+                           Empleador o independiente #|
+     Informacion, finanzas y servicios empresariales  |   .4612633   .2639411     1.75   0.081     -.056865    .9793917
+                           Empleador o independiente #|
+           Administracion publica, educacion y salud  |   .6292987   .2741864     2.30   0.022     .0910584    1.167539
+           Empleador o independiente#Otros servicios  |   .2516595   .2639147     0.95   0.341    -.2664171     .769736
+                                                      |
+                    tipo_trabajador#ocupacion10_final |
+     Empleador o independiente#Ocupaciones militares  |          0  (empty)
+     Empleador o independiente#Directores y gerentes  |    -.66772   .2746447    -2.43   0.015     -1.20686     -.12858
+                           Empleador o independiente #|
+           Profesionales cientificos e intelectuales  |  -.5194201   .0866676    -5.99   0.000    -.6895525   -.3492876
+                           Empleador o independiente #|
+             Tecnicos y profesionales de nivel medio  |  -.1442923   .0828388    -1.74   0.082    -.3069087    .0183241
+                           Empleador o independiente #|
+                    Personal de apoyo administrativo  |  -.6284645   .2304513    -2.73   0.007    -1.080851   -.1760781
+                           Empleador o independiente #|
+              Trabajadores de servicios y vendedores  |  -.2392485   .0581503    -4.11   0.000    -.3534001   -.1250969
+                           Empleador o independiente #|
+Agricultores y trabajadores agropecuarios califica..  |  -.2465822   .3596191    -0.69   0.493    -.9525308    .4593665
+                           Empleador o independiente #|
+                    Oficiales, operarios y artesanos  |   -.272925   .0810492    -3.37   0.001    -.4320284   -.1138216
+                           Empleador o independiente #|
+              Operadores de instalaciones y maquinas  |  -.3559086   .0654638    -5.44   0.000     -.484417   -.2274002
+                                                      |
+                                 tipo_trabajador#anio |
+                      Empleador o independiente#2024  |  -.0001652   .0442509    -0.00   0.997    -.0870317    .0867014
+                      Empleador o independiente#2025  |  -.0344841   .0383705    -0.90   0.369    -.1098071     .040839
+                                                      |
+                              tipo_trabajador#mes_num |
+                        Empleador o independiente# 2  |  -.0644901    .088046    -0.73   0.464    -.2373284    .1083482
+                        Empleador o independiente# 3  |  -.0832716   .0828588    -1.00   0.315    -.2459272     .079384
+                        Empleador o independiente# 4  |  -.0253838   .0814681    -0.31   0.755    -.1853094    .1345418
+                        Empleador o independiente# 5  |  -.0618317    .094928    -0.65   0.515    -.2481798    .1245163
+                        Empleador o independiente# 6  |   .0186586   .0935596     0.20   0.842    -.1650032    .2023203
+                        Empleador o independiente# 7  |  -.0370825   .0808489    -0.46   0.647    -.1957926    .1216275
+                        Empleador o independiente# 8  |  -.1352426   .0954323    -1.42   0.157    -.3225805    .0520953
+                        Empleador o independiente# 9  |  -.1901616   .0907004    -2.10   0.036    -.3682106   -.0121125
+                        Empleador o independiente#10  |  -.1166617   .0821497    -1.42   0.156    -.2779252    .0446019
+                        Empleador o independiente#11  |  -.1213492   .0800069    -1.52   0.130    -.2784064     .035708
+                        Empleador o independiente#12  |  -.1656821   .0765015    -2.17   0.031    -.3158581   -.0155061
+                                                      |
+                                           tic_uso_pc |   .2384378   .0177164    13.46   0.000     .2036596    .2732159
+                                actividades_centradas |   .0291325   .0047562     6.13   0.000      .019796    .0384691
+                                             informal |  -.0595167   .0162089    -3.67   0.000    -.0913356   -.0276978
+                                                e8_ui |  -.0954945   .0247359    -3.86   0.000    -.1440523   -.0469368
+                                                e8_ai |  -.0168151   .0080162    -2.10   0.036    -.0325514   -.0010789
+                                                e8_tu |   .0777937   .0846839     0.92   0.359    -.0884447    .2440321
+                                                e8_ta |  -.0466256   .0245416    -1.90   0.058    -.0948018    .0015507
+                                                e8_ti |  -.2720196   .0636207    -4.28   0.000      -.39691   -.1471293
+                                               e8_tui |   .0093249   .0871243     0.11   0.915     -.161704    .1803538
+                                               e8_tai |      .0476   .0289053     1.65   0.100    -.0091426    .1043425
+                                                _cons |   1.258349    .078358    16.06   0.000     1.104529     1.41217
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/E8_Ponderado.ster saved
+Tipo=1; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2384378   .0177164    13.46   0.000     .2036596    .2732159
+------------------------------------------------------------------------------
+Tipo=1; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0291325   .0047562     6.13   0.000      .019796    .0384691
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1429432   .0223413     6.40   0.000     .0990863    .1868002
+------------------------------------------------------------------------------
+Tipo=1; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0123174   .0062663     1.97   0.050     .0000164    .0246184
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .3162315   .0828357     3.82   0.000     .1536212    .4788418
+------------------------------------------------------------------------------
+Tipo=2; informalidad=0; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   -.017493   .0238277    -0.73   0.463    -.0642679    .0292819
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Uso
+
+ ( 1)  tic_uso_pc + e8_ui + e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2300619   .0498714     4.61   0.000     .1321621    .3279617
+------------------------------------------------------------------------------
+Tipo=2; informalidad=1; margen=Intensidad
+
+ ( 1)  actividades_centradas + e8_ai + e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0132918   .0143084     0.93   0.353    -.0147963    .0413799
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0777937   .0846839     0.92   0.359    -.0884447    .2440321
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu + e8_tui = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0871187   .0547314     1.59   0.112    -.0203215    .1945589
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0466256   .0245416    -1.90   0.058    -.0948018    .0015507
+------------------------------------------------------------------------------
+
+ ( 1)  e8_ta + e8_tai = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0009744   .0160861     0.06   0.952    -.0306034    .0325522
+------------------------------------------------------------------------------
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+ ( 3)  e8_ta = 0
+ ( 4)  e8_tai = 0
+
+       F(  4,   771) =    1.78
+            Prob > F =    0.1313
+
+ ( 1)  e8_tu = 0
+ ( 2)  e8_tui = 0
+
+       F(  2,   771) =    1.39
+            Prob > F =    0.2498
+
+ ( 1)  e8_ta = 0
+ ( 2)  e8_tai = 0
+
+       F(  2,   771) =    1.81
+            Prob > F =    0.1640
+
+. postclose `HC'
+
+. postclose `HA'
+
+. postclose `HD'
+
+. postclose `HT'
+
+. postclose `HM'
+
+. 
+. * 4. VERIFICAR LA EQUIVALENCIA DE LOS AJUSTES CON REGRESIONES SEPARADAS.
+. * Se comparan predicciones, no se exige igualdad de sus VCE finitas.
+. estimates restore E8_Lineal
+(results E8_Lineal are active now)
+
+. predict double e8_ajuste_conjunto, xb
+
+. generate double e8_ajuste_separado = .
+(18,065 missing values generated)
+
+. forvalues tipo = 1/2 {
+  2.     quietly regress ln_ing_hora_real2025 `controles' `tic_base' if tipo_trabajador == `tipo', vce(cluster id_conglo
+> merado_marco)
+  3.     predict double e8_ajuste_temporal if tipo_trabajador == `tipo', xb
+  4.     replace e8_ajuste_separado = e8_ajuste_temporal if tipo_trabajador == `tipo'
+  5.     drop e8_ajuste_temporal
+  6. }
+(5,845 missing values generated)
+(12,220 real changes made)
+(12,220 missing values generated)
+(5,845 real changes made)
+
+. assert abs(e8_ajuste_conjunto - e8_ajuste_separado) < 1e-6
+
+. display "VERIFICACION: ajustes conjuntos y separados coinciden."
+VERIFICACION: ajustes conjuntos y separados coinciden.
+
+. estimates restore E8_Lineal
+(results E8_Lineal are active now)
+
+. 
+. * 5. AJUSTE HOLM DE CUATRO CONTRASTES POR ESPECIFICACION.
+. preserve
+
+. use "`resultados'/diferencias_tipo.dta", clear
+
+. assert !missing(p, b, se, li, ls)
+
+. bysort modelo: assert _N == 4
+
+. bysort modelo (p orden): generate double p_holm = min(1, (_N - _n + 1)*p)
+
+. by modelo: replace p_holm = max(p_holm, p_holm[_n-1]) if _n > 1
+(0 real changes made)
+
+. assert p_holm >= p - 1e-12
+
+. assert inrange(p_holm, 0, 1)
+
+. label variable p_holm "Holm: cuatro comparaciones individuales por especificacion"
+
+. sort modelo orden
+
+. save "`resultados'/diferencias_tipo.dta", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/diferencias_tipo.dta saved
+
+. restore
+
+. 
+. * 6. EXPORTAR TABLAS NUMERICAS PARA EL WORD.
+. foreach tabla in coeficientes_tipo asociaciones_tipo diferencias_tipo pruebas_tipo resumen_modelos_tipo {
+  2.     preserve
+  3.     use "`resultados'/`tabla'.dta", clear
+  4.     export delimited using "`resultados'/`tabla'.csv", replace
+  5.     if "`tabla'" == "asociaciones_tipo" {
+  6.         format b se pct pct_li pct_ls %10.5f
+  7.         format p %12.5g
+  8.         list modelo tipo informalidad margen b se p pct pct_li pct_ls, sepby(modelo) noobs
+  9.     }
+ 10.     if "`tabla'" == "diferencias_tipo" {
+ 11.         format b se li ls %10.5f
+ 12.         format p p_holm %12.5g
+ 13.         list modelo margen informalidad b se li ls p p_holm, sepby(modelo) noobs
+ 14.     }
+ 15.     if "`tabla'" == "pruebas_tipo" {
+ 16.         format F %10.5f
+ 17.         format p %12.5g
+ 18.         list, sepby(modelo) noobs
+ 19.     }
+ 20.     if "`tabla'" == "resumen_modelos_tipo" list, noobs
+ 21.     restore
+ 22. }
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/coeficientes_tipo.csv saved
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/asociaciones_tipo.csv saved
+
+  +--------------------------------------------------------------------------------------------------------------+
+  |     modelo   tipo   inform~d       margen          b        se            p        pct     pct_li     pct_ls |
+  |--------------------------------------------------------------------------------------------------------------|
+  |     Lineal      1          0          Uso    0.25530   0.01553            0   29.08496   25.20879   33.08113 |
+  |     Lineal      1          0   Intensidad    0.03030   0.00434   6.3915e-12    3.07635    2.20166    3.95853 |
+  |     Lineal      1          1          Uso    0.14669   0.01913   5.2070e-14   15.80000   11.53270   20.23057 |
+  |     Lineal      1          1   Intensidad    0.01345   0.00549      .014596    1.35400    0.26669    2.45311 |
+  |     Lineal      2          0          Uso    0.39898   0.06637   2.8329e-09   49.02978   30.82546   69.76722 |
+  |     Lineal      2          0   Intensidad   -0.02191   0.01612       .17449   -2.16707   -5.21438    0.97820 |
+  |     Lineal      2          1          Uso    0.20194   0.04311   3.3212e-06   22.37772   12.44712   33.18533 |
+  |     Lineal      2          1   Intensidad    0.01027   0.01277       .42144    1.03231   -1.46855    3.59664 |
+  |--------------------------------------------------------------------------------------------------------------|
+  | Cuadratica      1          0          Uso    0.21747   0.01539            0   24.29257   20.59288   28.10577 |
+  | Cuadratica      1          0   Intensidad    0.02356   0.00423   3.6058e-08    2.38443    1.53700    3.23894 |
+  | Cuadratica      1          1          Uso    0.13483   0.01910   3.7126e-12   14.43430   10.22373   18.80571 |
+  | Cuadratica      1          1   Intensidad    0.01038   0.00553      .061052    1.04317   -0.04822    2.14649 |
+  | Cuadratica      2          0          Uso    0.36785   0.06614   3.6929e-08   44.46262   26.87165   64.49259 |
+  | Cuadratica      2          0   Intensidad   -0.02543   0.01627       .11853   -2.51081   -5.57565    0.65351 |
+  | Cuadratica      2          1          Uso    0.18604   0.04270   .000014989   20.44706   10.76206   30.97891 |
+  | Cuadratica      2          1   Intensidad    0.00831   0.01273        .5142    0.83422   -1.65430    3.38571 |
+  |--------------------------------------------------------------------------------------------------------------|
+  |  Ponderado      1          0          Uso    0.23844   0.01772   3.0750e-37   26.92647   22.58808   31.41840 |
+  |  Ponderado      1          0   Intensidad    0.02913   0.00476   1.4426e-09    2.95610    1.99932    3.92186 |
+  |  Ponderado      1          1          Uso    0.14294   0.02234   2.7269e-10   15.36643   10.41616   20.53864 |
+  |  Ponderado      1          1   Intensidad    0.01232   0.00627      .049696    1.23936    0.00164    2.49239 |
+  |  Ponderado      2          0          Uso    0.31623   0.08284    .00014558   37.19478   16.60491   61.42037 |
+  |  Ponderado      2          0   Intensidad   -0.01749   0.02383       .46308   -1.73409   -6.22463    2.97148 |
+  |  Ponderado      2          1          Uso    0.23006   0.04987   4.6440e-06   25.86779   14.12933   38.81358 |
+  |  Ponderado      2          1   Intensidad    0.01329   0.01431       .35321    1.33805   -1.46873    4.22480 |
+  +--------------------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/diferencias_tipo.csv saved
+
+  +-----------------------------------------------------------------------------------------------------+
+  |     modelo       margen   inform~d          b        se         li         ls          p     p_holm |
+  |-----------------------------------------------------------------------------------------------------|
+  | Cuadratica          Uso          0    0.15038   0.06822    0.01645    0.28431    .027803    .083409 |
+  | Cuadratica          Uso          1    0.05121   0.04610   -0.03929    0.14171       .267     .53399 |
+  | Cuadratica   Intensidad          0   -0.04899   0.01690   -0.08217   -0.01582   .0038502    .015401 |
+  | Cuadratica   Intensidad          1   -0.00207   0.01386   -0.02927    0.02513     .88127     .88127 |
+  |-----------------------------------------------------------------------------------------------------|
+  |     Lineal          Uso          0    0.14368   0.06811    0.00998    0.27737    .035215     .10564 |
+  |     Lineal          Uso          1    0.05525   0.04664   -0.03631    0.14680     .23655     .47309 |
+  |     Lineal   Intensidad          0   -0.05221   0.01671   -0.08502   -0.01940   .0018539   .0074156 |
+  |     Lineal   Intensidad          1   -0.00318   0.01387   -0.03040    0.02404     .81873     .81873 |
+  |-----------------------------------------------------------------------------------------------------|
+  |  Ponderado          Uso          0    0.07779   0.08468   -0.08844    0.24403     .35857     .71715 |
+  |  Ponderado          Uso          1    0.08712   0.05473   -0.02032    0.19456     .11185     .33555 |
+  |  Ponderado   Intensidad          0   -0.04663   0.02454   -0.09480    0.00155    .057824      .2313 |
+  |  Ponderado   Intensidad          1    0.00097   0.01609   -0.03060    0.03255     .95171     .95171 |
+  +-----------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/pruebas_tipo.csv saved
+
+  +----------------------------------------------------------------------------------------------------------+
+  |     modelo                                      prueba         F   gl1   gl2          p       N   grupos |
+  |----------------------------------------------------------------------------------------------------------|
+  |     Lineal         Igualdad del bloque TIC entre tipos   4.15531     4   771   .0024537   18065      772 |
+  |     Lineal      Igualdad del margen de uso entre tipos   2.44977     2   771    .086985   18065      772 |
+  |     Lineal   Igualdad del margen intensivo entre tipos   4.96996     2   771   .0071675   18065      772 |
+  |----------------------------------------------------------------------------------------------------------|
+  | Cuadratica         Igualdad del bloque TIC entre tipos   3.94830     4   771   .0035206   18065      772 |
+  | Cuadratica      Igualdad del margen de uso entre tipos   2.59537     2   771     .07527   18065      772 |
+  | Cuadratica   Igualdad del margen intensivo entre tipos   4.25159     2   771    .014577   18065      772 |
+  |----------------------------------------------------------------------------------------------------------|
+  |  Ponderado         Igualdad del bloque TIC entre tipos   1.77790     4   771      .1313   18065      772 |
+  |  Ponderado      Igualdad del margen de uso entre tipos   1.38974     2   771     .24976   18065      772 |
+  |  Ponderado   Igualdad del margen intensivo entre tipos   1.81218     2   771     .16399   18065      772 |
+  +----------------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/resumen_modelos_tipo.csv saved
+
+  +-----------------------------------------------------------------------------------------+
+  |     modelo   ponder~o       N   N_dep   N_empl~d   grupos   rango         r2   df_resid |
+  |-----------------------------------------------------------------------------------------|
+  |     Lineal          0   18065   12220       5845      772      84    .376575        771 |
+  | Cuadratica          0   18065   12220       5845      772      86   .3822495        771 |
+  |  Ponderado          1   18065   12220       5845      772      84    .344363        771 |
+  +-----------------------------------------------------------------------------------------+
+
+. 
+. * 7. ASOCIACIONES: DOS PANELES CON IC DEL 95%, MODELO LINEAL.
+. preserve
+
+. use "`resultados'/asociaciones_tipo.dta", clear
+
+. keep if modelo == "Lineal"
+(16 observations deleted)
+
+. assert _N == 8
+
+. generate double e8_x = tipo + cond(informalidad == 0, -0.09, 0.09)
+
+. local lienzo "graphregion(color(white)) plotregion(color(white))"
+
+. foreach margen in Uso Intensidad {
+  2.     local titulo "Uso de computadora"
+  3.     if "`margen'" == "Intensidad" local titulo "Actividad adicional entre usuarios"
+  4.     twoway (rcap pct_li pct_ls e8_x if margen == "`margen'" & informalidad == 0, lcolor(navy)) (scatter pct e8_x if
+>  margen == "`margen'" & informalidad == 0, mcolor(navy) msymbol(O)) (rcap pct_li pct_ls e8_x if margen == "`margen'" &
+>  informalidad == 1, lcolor(maroon)) (scatter pct e8_x if margen == "`margen'" & informalidad == 1, mcolor(maroon) msym
+> bol(D)), title("`titulo'", size(medsmall)) xtitle("") xlabel(1 "Dependientes" 2 "Empl./indep.", labsize(small)) xscale
+> (range(0.65 2.35)) ytitle("Diferencia porcentual condicional", size(small)) yline(0, lcolor(gs10)) legend(order(2 "For
+> males" 4 "Informales") rows(1) size(small)) `lienzo' name(e8_`margen', replace)
+  5. }
+
+. graph combine e8_Uso e8_Intensidad, cols(2) title("Asociaciones TIC por tipo de trabajador", size(medsmall)) note("IC 
+> individuales del 95%. Muestra: 18 065; 772 conglomerados del marco." "Uso: usuario frente a no usuario, a la intensida
+> d de referencia." "Intensidad: una actividad adicional entre usuarios. Centro fijo: 6.254633 actividades.", size(vsmal
+> l)) graphregion(color(white)) xsize(12) ysize(6) name(e8_asociaciones, replace)
+
+. graph export "`resultados'/01_Asociaciones_TIC_por_tipo.png", width(3200) replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/01_Asociaciones_TIC_por_tipo.png saved as PNG
+    format
+
+. graph save "`resultados'/01_Asociaciones_TIC_por_tipo.gph", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/01_Asociaciones_TIC_por_tipo.gph saved
+
+. restore
+
+. 
+. * 8. DIFERENCIAS ENTRE TIPOS: LOG PUNTOS, IC INDIVIDUALES.
+. preserve
+
+. use "`resultados'/diferencias_tipo.dta", clear
+
+. keep if modelo == "Lineal"
+(8 observations deleted)
+
+. assert _N == 4
+
+. twoway (rcap li ls orden, horizontal lcolor(navy)) (scatter orden b, mcolor(navy) msymbol(O)), title("Diferencias TIC entre tipos de t
+> rabajador", size(medsmall)) xtitle("Coeficiente de empleadores/independientes menos dependientes", size(small)) ytitle("") ylabel(1 "U
+> so: formales" 2 "Uso: informales" 3 "Actividad: formales" 4 "Actividad: informales", angle(0) labsize(small)) yscale(reverse) xline(0,
+>  lcolor(maroon)) legend(off) note("Diferencias en log puntos. IC individuales del 95%; VCE agrupada por marco." "Los p originales y aj
+> ustados por Holm se reportan en diferencias_tipo.dta.", size(vsmall)) graphregion(color(white)) plotregion(color(white)) xsize(10) ysi
+> ze(6) name(e8_diferencias, replace)
+
+. graph export "`resultados'/02_Diferencias_TIC_por_tipo.png", width(3200) replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/02_Diferencias_TIC_por_tipo.png saved as PNG
+    format
+
+. graph save "`resultados'/02_Diferencias_TIC_por_tipo.gph", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/02_Diferencias_TIC_por_tipo.gph saved
+
+. restore
+
+. 
+. * 9. DISTRIBUCIONES DESCRIPTIVAS. Todos los registros de los cuatro grupos.
+. * El kernel gaussiano, el ancho y la rejilla son comunes a las cuatro curvas.
+. * El ancho por defecto se calcula en TODA la muestra y despues se fija.
+. * Los 400 puntos son evaluaciones de la densidad, no personas seleccionadas.
+. * Las densidades son no ponderadas y sin controles; cada curva integra a uno.
+. quietly kdensity ln_ing_hora_real2025, kernel(gaussian) n(400) generate(e8_grid e8_global) nograph
+
+. local ancho = r(bwidth)
+
+. assert `ancho' > 0 & !missing(`ancho')
+
+. display "ANCHO COMUN PARA DENSIDADES: " %12.8f `ancho'
+ANCHO COMUN PARA DENSIDADES:   0.08805486
+
+. quietly kdensity ln_ing_hora_real2025 if informal == 0 & tic_uso_pc == 0, kernel(gaussian) bwidth(`ancho') at(e8_grid) generate(e8_f0)
+>  nograph
+
+. quietly kdensity ln_ing_hora_real2025 if informal == 0 & tic_uso_pc == 1, kernel(gaussian) bwidth(`ancho') at(e8_grid) generate(e8_f1)
+>  nograph
+
+. quietly kdensity ln_ing_hora_real2025 if informal == 1 & tic_uso_pc == 0, kernel(gaussian) bwidth(`ancho') at(e8_grid) generate(e8_i0)
+>  nograph
+
+. quietly kdensity ln_ing_hora_real2025 if informal == 1 & tic_uso_pc == 1, kernel(gaussian) bwidth(`ancho') at(e8_grid) generate(e8_i1)
+>  nograph
+
+. assert !missing(e8_f0, e8_f1, e8_i0, e8_i1) if !missing(e8_grid)
+
+. generate double e8_ancho = `ancho'
+
+. label variable e8_f0 "Formal no usuario"
+
+. label variable e8_f1 "Formal usuario"
+
+. label variable e8_i0 "Informal no usuario"
+
+. label variable e8_i1 "Informal usuario"
+
+. twoway (line e8_f0 e8_grid, sort lcolor(gs7)) (line e8_f1 e8_grid, sort lcolor(navy)), title("Empleo formal", size(medsmall)) xtitle("
+> Log ingreso horario a precios de 2025", size(small)) ytitle("Densidad") legend(order(1 "No usa" 2 "Usa") rows(1) size(small)) graphreg
+> ion(color(white)) plotregion(color(white)) name(e8_dens_formal, replace)
+
+. twoway (line e8_i0 e8_grid, sort lcolor(gs7)) (line e8_i1 e8_grid, sort lcolor(navy)), title("Empleo informal", size(medsmall)) xtitle
+> ("Log ingreso horario a precios de 2025", size(small)) ytitle("Densidad") legend(order(1 "No usa" 2 "Usa") rows(1) size(small)) graphr
+> egion(color(white)) plotregion(color(white)) name(e8_dens_informal, replace)
+
+. graph combine e8_dens_formal e8_dens_informal, cols(2) xcommon ycommon title("Distribucion del ingreso y uso de computadora", size(med
+> small)) note("Calculos descriptivos sin ponderadores ni controles. Se utilizan las 18 065 observaciones." "Kernel gaussiano y ancho co
+> mun; las curvas resumen la distribucion completa.", size(vsmall)) graphregion(color(white)) xsize(12) ysize(6) name(e8_densidades, rep
+> lace)
+
+. graph export "`resultados'/03_Distribuciones_ingreso_TIC.png", width(3200) replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/03_Distribuciones_ingreso_TIC.png saved as PNG
+    format
+
+. graph save "`resultados'/03_Distribuciones_ingreso_TIC.gph", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/03_Distribuciones_ingreso_TIC.gph saved
+
+. preserve
+
+. keep e8_grid e8_f0 e8_f1 e8_i0 e8_i1 e8_ancho
+
+. keep if !missing(e8_grid)
+(17,665 observations deleted)
+
+. assert _N == 400
+
+. save "`resultados'/densidades_tic.dta", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/densidades_tic.dta saved
+
+. export delimited using "`resultados'/densidades_tic.csv", replace
+file $ENAHO_SALIDA/Complemento_MCO_etapa08E/densidades_tic.csv saved
+
+. restore
+
+. 
+. * 10. GUARDAR COPIA DE TRABAJO. La base principal anterior se conserva.
+. assert _N == `n_base'
+
+. isid id_observacion
+
+. sort anio conglome vivienda hogar codperso
+
+. save "`salida'/base_mco_complemento_etapa08E.dta", replace
+file $ENAHO_SALIDA/base_mco_complemento_etapa08E.dta saved
+
+. display _newline "ETAPA 08E TERMINADA: 18 065 observaciones; tres especificaciones."
+
+ETAPA 08E TERMINADA: 18 065 observaciones; tres especificaciones.
+
+. display "Revisar la prueba conjunta, los cuatro contrastes y su sensibilidad."
+Revisar la prueba conjunta, los cuatro contrastes y su sensibilidad.
+
+. display "Se generaron tres figuras y las tablas numericas."
+Se generaron tres figuras y las tablas numericas.
+
+. display "Resultados: `resultados'"
+Resultados: $ENAHO_SALIDA/Complemento_MCO_etapa08E
+
+. log close etapa08e
+      name:  etapa08e
+       log:  $ENAHO_SALIDA/Complemento_MCO_etapa08E/08E_Contrastes_TIC_por_tipo.log
+  log type:  text
+ closed on:  15 Oct 2026, 07:26:48
+----------------------------------------------------------------------------------------------------------------------------------------

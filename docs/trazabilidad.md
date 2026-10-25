@@ -19,7 +19,7 @@ El script `winzori.do` se conserva como fragmento incompleto y queda fuera de la
 
 ## Tablas
 
-Las ubicaciones siguientes corresponden al segundo bloque de publicación. Esta primera entrega incluye el código y la documentación.
+Las 27 tablas siguientes están disponibles en el segundo bloque de publicación junto con el código y la documentación del primero.
 
 | Original | Ubicación |
 |---|---|
@@ -52,3 +52,9 @@ Las ubicaciones siguientes corresponden al segundo bloque de publicación. Esta 
 | `resumen_tic.csv` | `resultados/tablas/08_comparabilidad/resumen_tic.csv` |
 
 Las variantes de 08D modifican etiquetas, orden de columnas y redondeo. Se conservan en los originales. Las copias públicas usan un solo nombre por tabla. Los tres CSV de sensibilidad recibidos con `(1)` se renombraron sin ese sufijo, conservando sus bytes.
+
+## Logs
+
+Los cinco registros se encuentran en `resultados/logs/`: MCO, sensibilidad, forma funcional educativa, contrastes por tipo de trabajador y Heckman. Todos proceden de ejecuciones previas aportadas por el autor. Se sustituyeron las rutas personales en las copias públicas.
+
+Además, `07_Precios_y_sensibilidad_MCO.log` omite dos salidas de observaciones individuales y `10_Heckman_estimacion_y_pruebas.log` omite una. La omisión se señala en cada ubicación del log. Los coeficientes, las pruebas y los resúmenes agregados se conservan. Los registros originales permanecen en privado.

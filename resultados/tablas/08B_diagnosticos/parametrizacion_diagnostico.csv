@@ -1,0 +1,7 @@
+modelo,parametrizacion,N,columnas,rango,max_dif_ajuste,max_dif_TIC,max_dif_SE_TIC
+M1,Original,18065,38,38,1.0622614e-12,,
+M1,Bases_alternativas,18065,38,38,7.3696604e-13,,
+M1,Bases_y_exp_centrada,18065,38,38,7.4007467e-13,,
+M2,Original,18065,43,43,1.1182166e-12,1.7780222e-13,1.2729401e-14
+M2,Bases_alternativas,18065,43,43,7.5983664e-13,2.9271030e-13,1.1476931e-14
+M2,Bases_y_exp_centrada,18065,43,43,7.6250117e-13,2.8843594e-13,1.1449175e-14

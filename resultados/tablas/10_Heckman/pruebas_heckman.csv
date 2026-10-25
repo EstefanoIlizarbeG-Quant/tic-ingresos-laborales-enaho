@@ -1,0 +1,28 @@
+modelo,prueba,tipo,estadistico,gl1,gl2,p,rc
+P_Ambas,Menores en probit,Wald,1.791636122377451,1,,.18072695,0
+P_Ambas,Ingreso no laboral en probit,Wald,164.0202424192818,1,,1.4974061e-37,0
+P_Ambas,Candidatas conjuntamente en probit,Wald,164.0387770695188,2,,2.3956984e-36,0
+O_Candidatas,Candidatas en MCO seleccionado: diagnostico,F,4.36476297606353,2,771,.013033423,0
+H_Ambas,Independencia de ecuaciones: rho=0,Wald,25.51430648079527,1,,4.3911476e-07,0
+H_Ambas,Candidatas excluidas: relevancia en seleccion,Wald,165.2852277862887,2,,1.2846026e-36,0
+H_Menores,Independencia de ecuaciones: rho=0,Wald,23.98688744809395,1,,9.6994029e-07,0
+H_Menores,Candidatas excluidas: relevancia en seleccion,Wald,1.017263049404816,1,,.31316909,0
+H_NoLaboral,Independencia de ecuaciones: rho=0,Wald,24.38718247458522,1,,7.8791180e-07,0
+H_NoLaboral,Candidatas excluidas: relevancia en seleccion,Wald,164.6956737131038,1,,1.0660798e-37,0
+H_NoLabEnY,Independencia de ecuaciones: rho=0,Wald,22.52108672596731,1,,2.0784942e-06,0
+H_NoLabEnY,Candidatas excluidas: relevancia en seleccion,Wald,1.997502556482414,1,,.15755862,0
+H_NoLabEnY,Ingreso no laboral en resultado,Wald,2.832643403275415,1,,.092366211,0
+H_MenorEnY,Independencia de ecuaciones: rho=0,Wald,25.31740118720978,1,,4.8630176e-07,0
+H_MenorEnY,Candidatas excluidas: relevancia en seleccion,Wald,165.2855397168694,1,,7.9238232e-38,0
+H_MenorEnY,Menores en resultado,Wald,3.773958323958988,1,,.052056305,0
+O_Cuadratica,Educacion cuadratica en MCO,F,131.0383781945049,1,771,3.9278905e-28,0
+H_Cuadratica,Independencia de ecuaciones: rho=0,Wald,18.9201225685045,1,,.000013630729,0
+H_Cuadratica,Candidatas excluidas: relevancia en seleccion,Wald,170.8602753809569,2,,7.9097475e-38,0
+H_Cuadratica,Educacion cuadratica en resultado,Wald,135.2930498184658,1,,2.8486366e-31,0
+H_Cuadratica,Educacion cuadratica en seleccion,Wald,131.1773713834334,1,,2.2644172e-30,0
+H_Estado,Independencia de ecuaciones: rho=0,Wald,25.63656377862089,1,,4.1215526e-07,0
+H_Estado,Candidatas excluidas: relevancia en seleccion,Wald,171.1584924362301,2,,6.8140542e-38,0
+H_Ponderado,Independencia de ecuaciones: rho=0,Wald,12.45796654351892,1,,.0004162128,0
+H_Ponderado,Candidatas excluidas: relevancia en seleccion,Wald,93.709331737825,2,,4.4799912e-21,0
+H_SinProductivas,Independencia de ecuaciones: rho=0,Wald,53.17710577369171,1,,3.0479048e-13,0
+H_SinProductivas,Candidatas excluidas: relevancia en seleccion,Wald,167.0738327943543,2,,5.2526464e-37,0

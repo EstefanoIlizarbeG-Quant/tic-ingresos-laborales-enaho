@@ -1,0 +1,1663 @@
+REGISTRO ORIGINAL DE STATA APORTADO POR EL AUTOR. RUTAS LOCALES SUSTITUIDAS.
+NO ES UNA NUEVA EJECUCION DE ESTA COPIA DEL REPOSITORIO.
+
+----------------------------------------------------------------------------------------------------------------------------------------
+      name:  etapa06
+       log:  $ENAHO_SALIDA/Estimaciones_MCO/06_Estimaciones_MCO.log
+  log type:  text
+ opened on:  13 Oct 2026, 01:45:45
+
+. 
+. use "`salida'/base_mco_2023_2025.dta", clear
+
+. 
+. local n_mco = _N
+
+. 
+. isid anio conglome vivienda hogar codperso
+
+. 
+. isid id_observacion
+
+. 
+. assert muestra_salario_controles_final == 1
+
+. 
+. assert !missing(y_log_ingreso_hora, y_log_ingreso_hora_w, ///
+>     tic_uso_pc, actividades_centradas, informal, ///
+>     educ_years, experiencia_potencial, experiencia2, ///
+>     mujer, casado, jefe_hogar, sector10, ///
+>     ocupacion10_final, anio, mes_num, ///
+>     id_conglomerado_marco, id_persona_p201p, id_hogar_marco)
+
+. 
+. assert !missing(fac500a) & fac500a > 0
+
+. 
+. 
+. * 2. BLOQUES DE VARIABLES Y REFERENCIAS EXPLICITAS
+. *
+. * Mujer: hombre = 0.
+. * Casado: no casado = 0.
+. * Jefe: no jefe = 0.
+. * Informalidad: formal = 0.
+. * Uso de computadora: no usuario = 0.
+. * Sector: agropecuario/pesca = 1.
+. * Ocupacion: militar = 0, como en la especificacion anterior.
+. * Anio: 2023.
+. * Mes: enero = 1.
+. 
+. local personales "c.educ_years c.experiencia_potencial c.experiencia2 ib0.mujer ib0.casado ib0.jefe_hogar"
+
+. 
+. local productivos "ib1.sector10 ib0.ocupacion10_final"
+
+. 
+. local temporales "ib2023.anio ib1.mes_num"
+
+. 
+. local tic_sin_interacciones "ib0.informal ib0.tic_uso_pc c.actividades_centradas"
+
+. 
+. local tic_interacciones "ib0.tic_uso_pc##ib0.informal c.actividades_centradas##ib0.informal"
+
+. 
+. * Se conserva la media de referencia construida en la etapa 4.
+. * No se recalcula al ponderar ni al cambiar la especificacion.
+. 
+. 
+. * 3. PREPARAR ARCHIVOS DE RESULTADOS
+. 
+. tempname Hcoef Hcontr Htest B V
+
+. 
+. postfile `Hcoef' ///
+>     str24 modelo ///
+>     str32 inferencia ///
+>     str32 dependiente ///
+>     str64 termino ///
+>     byte ponderado omitido ///
+>     double b se p li ls N r2 grupos ///
+>     using "`resultados'/coeficientes_MCO.dta", replace
+(file $ENAHO_SALIDA/Estimaciones_MCO/coeficientes_MCO.dta not found)
+
+. 
+. postfile `Hcontr' ///
+>     str24 modelo ///
+>     str32 inferencia ///
+>     str40 contraste ///
+>     double b se p li ls N ///
+>     using "`resultados'/contrastes_MCO.dta", replace
+(file $ENAHO_SALIDA/Estimaciones_MCO/contrastes_MCO.dta not found)
+
+. 
+. postfile `Htest' ///
+>     str24 modelo ///
+>     str32 inferencia ///
+>     str32 prueba ///
+>     double F gl_num gl_den p N ///
+>     using "`resultados'/pruebas_MCO.dta", replace
+(file $ENAHO_SALIDA/Estimaciones_MCO/pruebas_MCO.dta not found)
+
+. 
+. 
+. * 4. ESTIMAR LOS MODELOS PREDEFINIDOS
+. 
+. foreach modelo in ///
+>     M1_Mincer I1_Informal I2_TIC M2_Principal ///
+>     R1_SinProductivos R2_Ajustado ///
+>     R3_P201P R4_Hogar R5_Ponderado R6_Robusto {
+  2. 
+.     local dependiente "y_log_ingreso_hora"
+  3. 
+.     local regresores ///
+>         "`personales' `productivos' `temporales'"
+  4. 
+.     local pesos ""
+  5. 
+.     local ponderado = 0
+  6. 
+.     local vce "cluster id_conglomerado_marco"
+  7. 
+.     local inferencia "Cluster marco"
+  8. 
+. 
+.     * Mincer mas informalidad.
+.     if "`modelo'" == "I1_Informal" {
+  9. 
+.         local regresores ///
+>             "`regresores' ib0.informal"
+ 10.     }
+ 11. 
+. 
+.     * Mincer, informalidad y TIC sin interacciones.
+.     if "`modelo'" == "I2_TIC" {
+ 12. 
+.         local regresores ///
+>             "`regresores' `tic_sin_interacciones'"
+ 13.     }
+ 14. 
+. 
+.    * Principal y sus variantes.
+. 
+. if !inlist("`modelo'", "M1_Mincer", "I1_Informal", "I2_TIC") {
+ 15. 
+.     local regresores "`personales' `productivos' `temporales' `tic_interacciones'"
+ 16. }
+ 17. 
+.     * Principal sin controles de sector y ocupacion.
+.     if "`modelo'" == "R1_SinProductivos" {
+ 18. 
+.         local regresores ///
+>             "`personales' `temporales' `tic_interacciones'"
+ 19.     }
+ 20. 
+. 
+.     * Resultado ajustado a p1-p99.
+.     if "`modelo'" == "R2_Ajustado" {
+ 21. 
+.         local dependiente "y_log_ingreso_hora_w"
+ 22.     }
+ 23. 
+. 
+.     * Inferencia alternativa agrupada por codigo P201P.
+.     if "`modelo'" == "R3_P201P" {
+ 24. 
+.         local vce "cluster id_persona_p201p"
+ 25. 
+.         local inferencia "Cluster P201P"
+ 26.     }
+ 27. 
+. 
+.     * Inferencia alternativa agrupada por hogar del marco.
+.     if "`modelo'" == "R4_Hogar" {
+ 28. 
+.         local vce "cluster id_hogar_marco"
+ 29. 
+.         local inferencia "Cluster hogar"
+ 30.     }
+ 31. 
+. 
+.     * Ponderacion con factor de expansion.
+.     if "`modelo'" == "R5_Ponderado" {
+ 32. 
+.         local pesos "[pweight=fac500a]"
+ 33. 
+.         local ponderado = 1
+ 34. 
+.         local inferencia "Ponderado cluster marco"
+ 35.     }
+ 36. 
+. 
+.     * Errores robustos a heterocedasticidad sin agrupacion.
+.     if "`modelo'" == "R6_Robusto" {
+ 37. 
+.         local vce "robust"
+ 38. 
+.         local inferencia "Robusto sin agrupacion"
+ 39.     }
+ 40. 
+. 
+.     display _newline "MODELO: `modelo'"
+ 41.     display "Dependiente: `dependiente'"
+ 42.     display "Inferencia: `inferencia'"
+ 43. 
+.     regress `dependiente' `regresores' `pesos', ///
+>         vce(`vce') level(95)
+ 44. 
+.     * Comprobar que los cambios no provengan de otra muestra.
+.     assert e(N) == `n_mco'
+ 45. 
+.     estimates store `modelo'
+ 46. 
+.     estimates save ///
+>         "`resultados'/`modelo'.ster", replace
+ 47. 
+. 
+.     * --------------------------------------------------------
+.     * 4.1. GUARDAR COEFICIENTES, ERRORES E INTERVALOS
+.     * --------------------------------------------------------
+. 
+.     matrix `B' = e(b)
+ 48. 
+.     matrix `V' = e(V)
+ 49. 
+.     local nombres : colnames `B'
+ 50. 
+.     local j = 0
+ 51. 
+.     local grupos = .
+ 52. 
+.     if "`vce'" != "robust" {
+ 53.         local grupos = e(N_clust)
+ 54.     }
+ 55. 
+.     foreach termino of local nombres {
+ 56. 
+.         local j = `j' + 1
+ 57. 
+.         local bcoef = el(`B', 1, `j')
+ 58. 
+.         local secoef = sqrt(el(`V', `j', `j'))
+ 59. 
+.         * Referencias o terminos omitidos presentan SE igual a cero.
+.         local omitido = (`secoef' == 0)
+ 60. 
+.         local pcoef = .
+ 61.         local lic = .
+ 62.         local lsc = .
+ 63. 
+.         if `secoef' > 0 & `secoef' < . {
+ 64. 
+.             local pcoef = ///
+>                 2 * ttail(e(df_r), abs(`bcoef' / `secoef'))
+ 65. 
+.             local critico = invttail(e(df_r), 0.025)
+ 66. 
+.             local lic = `bcoef' - `critico' * `secoef'
+ 67. 
+.             local lsc = `bcoef' + `critico' * `secoef'
+ 68.         }
+ 69. 
+.         post `Hcoef' ///
+>             ("`modelo'") ///
+>             ("`inferencia'") ///
+>             ("`dependiente'") ///
+>             ("`termino'") ///
+>             (`ponderado') (`omitido') ///
+>             (`bcoef') (`secoef') (`pcoef') (`lic') (`lsc') ///
+>             (e(N)) (e(r2)) (`grupos')
+ 70.     }
+ 71. 
+. 
+.     * --------------------------------------------------------
+.     * 4.2. PRUEBAS Y CONTRASTES EN MODELOS CON INTERACCIONES
+.     * --------------------------------------------------------
+. 
+.     if !inlist("`modelo'", ///
+>         "M1_Mincer", "I1_Informal", "I2_TIC") {
+ 72. 
+.         * H0: ambos margenes TIC entre formales son cero.
+.         test ///
+>             (1.tic_uso_pc = 0) ///
+>             (actividades_centradas = 0)
+ 73. 
+.         post `Htest' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("TIC entre formales") ///
+>             (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N))
+ 74. 
+. 
+.         * H0: no existe heterogeneidad por informalidad.
+.         test ///
+>             (1.tic_uso_pc#1.informal = 0) ///
+>             (1.informal#c.actividades_centradas = 0)
+ 75. 
+.         post `Htest' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("Heterogeneidad por informalidad") ///
+>             (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N))
+ 76. 
+. 
+.         * H0: todo el bloque TIC es cero.
+.         test ///
+>             (1.tic_uso_pc = 0) ///
+>             (actividades_centradas = 0) ///
+>             (1.tic_uso_pc#1.informal = 0) ///
+>             (1.informal#c.actividades_centradas = 0)
+ 77. 
+.         post `Htest' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("Bloque TIC completo") ///
+>             (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N))
+ 78. 
+. 
+.         * Beta_u + delta_u:
+.         * Usuario informal en intensidad media versus
+.         * no usuario informal, manteniendo los controles.
+.         lincom ///
+>             1.tic_uso_pc + 1.tic_uso_pc#1.informal, level(95)
+ 79. 
+.         post `Hcontr' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("U entre informales") ///
+>             (r(estimate)) (r(se)) (r(p)) ///
+>             (r(lb)) (r(ub)) (e(N))
+ 80. 
+. 
+.         * Beta_a + delta_a:
+.         * Una actividad adicional entre usuarios informales.
+.         lincom ///
+>             actividades_centradas + ///
+>             1.informal#c.actividades_centradas, level(95)
+ 81. 
+.         post `Hcontr' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("Actividad entre informales") ///
+>             (r(estimate)) (r(se)) (r(p)) ///
+>             (r(lb)) (r(ub)) (e(N))
+ 82. 
+. 
+.         * Theta + delta_u:
+.         * Informal versus formal, ambos usuarios en la
+.         * intensidad de referencia.
+.         lincom ///
+>             1.informal + 1.tic_uso_pc#1.informal, level(95)
+ 83. 
+.         post `Hcontr' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("Brecha informal-formal entre usuarios") ///
+>             (r(estimate)) (r(se)) (r(p)) ///
+>             (r(lb)) (r(ub)) (e(N))
+ 84. 
+. 
+.         * Theta + beta_u + delta_u:
+.         * Usuario informal en intensidad media versus
+.         * no usuario formal, manteniendo los controles.
+.         lincom ///
+>             1.informal + 1.tic_uso_pc + ///
+>             1.tic_uso_pc#1.informal, level(95)
+ 85. 
+.         post `Hcontr' ///
+>             ("`modelo'") ("`inferencia'") ///
+>             ("Usuario informal vs no usuario formal") ///
+>             (r(estimate)) (r(se)) (r(p)) ///
+>             (r(lb)) (r(ub)) (e(N))
+ 86.     }
+ 87. }
+
+MODELO: M1_Mincer
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(37, 771)        =     167.01
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3288
+                                                Root MSE          =     .72984
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+                                 experiencia_potencial |   .0116584   .0016722     6.97   0.000     .0083757     .014941
+                                          experiencia2 |  -.0002011   .0000349    -5.77   0.000    -.0002695   -.0001327
+                                               1.mujer |  -.1896294   .0127794   -14.84   0.000    -.2147159   -.1645429
+                                              1.casado |   .0978565   .0163223     6.00   0.000     .0658151     .129898
+                                          1.jefe_hogar |   .1409089   .0134349    10.49   0.000     .1145356    .1672822
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .2240217   .0963694     2.32   0.020     .0348441    .4131992
+                                          Manufactura  |  -.0892185   .0695389    -1.28   0.200    -.2257265    .0472896
+                        Servicios publicos y residuos  |  -.3885944   .1044964    -3.72   0.000    -.5937255   -.1834632
+                                         Construccion  |   .1345588   .0714888     1.88   0.060    -.0057769    .2748945
+                                             Comercio  |  -.3307247   .0718554    -4.60   0.000      -.47178   -.1896693
+                     Transporte, alojamiento y comida  |  -.1605951   .0697408    -2.30   0.022    -.2974995   -.0236907
+      Informacion, finanzas y servicios empresariales  |  -.0714155   .0700501    -1.02   0.308    -.2089271    .0660961
+            Administracion publica, educacion y salud  |   .0311802   .0705271     0.44   0.659    -.1072678    .1696281
+                                      Otros servicios  |   -.036514   .0723878    -0.50   0.614    -.1786146    .1055867
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7942032     .07679    10.34   0.000      .643461    .9449454
+            Profesionales cientificos e intelectuales  |   .1938277   .0381386     5.08   0.000     .1189599    .2686956
+              Tecnicos y profesionales de nivel medio  |  -.0013708   .0382991    -0.04   0.971    -.0765538    .0738121
+                     Personal de apoyo administrativo  |  -.0565675   .0380179    -1.49   0.137    -.1311984    .0180635
+               Trabajadores de servicios y vendedores  |  -.4745328   .0394432   -12.03   0.000    -.5519616    -.397104
+Agricultores y trabajadores agropecuarios calificados  |   -.791659   .1834451    -4.32   0.000     -1.15177   -.4315479
+                     Oficiales, operarios y artesanos  |  -.4487864   .0408446   -10.99   0.000    -.5289663   -.3686066
+               Operadores de instalaciones y maquinas  |  -.4920622    .041157   -11.96   0.000    -.5728553    -.411269
+                              Ocupaciones elementales  |  -.4324673   .0382747   -11.30   0.000    -.5076023   -.3573323
+                                                       |
+                                                  anio |
+                                                 2024  |   .0024355   .0155912     0.16   0.876    -.0281707    .0330417
+                                                 2025  |    .052491   .0144702     3.63   0.000     .0240852    .0808967
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0303467   .0369333    -0.82   0.412    -.1028483     .042155
+                                                    3  |   .0094397   .0361406     0.26   0.794    -.0615058    .0803853
+                                                    4  |  -.0279617   .0389396    -0.72   0.473    -.1044019    .0484785
+                                                    5  |   .0113766   .0367545     0.31   0.757    -.0607741    .0835274
+                                                    6  |  -.0252242   .0377496    -0.67   0.504    -.0993284      .04888
+                                                    7  |  -.0100697   .0387716    -0.26   0.795    -.0861801    .0660407
+                                                    8  |  -.0759377   .0373129    -2.04   0.042    -.1491846   -.0026908
+                                                    9  |  -.0432252   .0363699    -1.19   0.235    -.1146209    .0281705
+                                                   10  |  -.0310324   .0388011    -0.80   0.424    -.1072008    .0451359
+                                                   11  |  -.0300968    .039241    -0.77   0.443    -.1071287    .0469352
+                                                   12  |   -.059608   .0373006    -1.60   0.110    -.1328309    .0136148
+                                                       |
+                                                 _cons |   1.505192   .0917135    16.41   0.000     1.325154    1.685229
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/M1_Mincer.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/M1_Mincer.ster saved
+
+MODELO: I1_Informal
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(38, 771)        =     172.35
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3407
+                                                Root MSE          =     .72336
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0603199   .0030094    20.04   0.000     .0544124    .0662274
+                                 experiencia_potencial |   .0090451   .0016669     5.43   0.000     .0057729    .0123172
+                                          experiencia2 |  -.0001582   .0000347    -4.55   0.000    -.0002264     -.00009
+                                               1.mujer |  -.1739244   .0126516   -13.75   0.000    -.1987601   -.1490887
+                                              1.casado |   .0843656   .0163065     5.17   0.000     .0523551    .1163761
+                                          1.jefe_hogar |   .1371783   .0133456    10.28   0.000     .1109802    .1633764
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1473489   .0965886     1.53   0.128     -.042259    .3369568
+                                          Manufactura  |  -.1504084   .0686155    -2.19   0.029    -.2851038    -.015713
+                        Servicios publicos y residuos  |  -.4275615   .1023212    -4.18   0.000    -.6284227   -.2267003
+                                         Construccion  |   .1151411   .0704366     1.63   0.103    -.0231291    .2534113
+                                             Comercio  |  -.3564106   .0707823    -5.04   0.000    -.4953595   -.2174617
+                     Transporte, alojamiento y comida  |  -.1692784   .0688845    -2.46   0.014    -.3045018    -.034055
+      Informacion, finanzas y servicios empresariales  |  -.1245849   .0691369    -1.80   0.072    -.2603037    .0111339
+            Administracion publica, educacion y salud  |   -.008758   .0696144    -0.13   0.900    -.1454142    .1278981
+                                      Otros servicios  |  -.0422271   .0715171    -0.59   0.555    -.1826186    .0981643
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .8306291   .0767687    10.82   0.000     .6799286    .9813296
+            Profesionales cientificos e intelectuales  |   .2613498   .0380486     6.87   0.000     .1866587    .3360409
+              Tecnicos y profesionales de nivel medio  |   .0618256   .0379619     1.63   0.104    -.0126954    .1363466
+                     Personal de apoyo administrativo  |  -.0065499   .0378394    -0.17   0.863    -.0808304    .0677306
+               Trabajadores de servicios y vendedores  |  -.3647088   .0394656    -9.24   0.000    -.4421815   -.2872361
+Agricultores y trabajadores agropecuarios calificados  |  -.6363519    .183453    -3.47   0.001    -.9964786   -.2762252
+                     Oficiales, operarios y artesanos  |  -.2987359   .0411495    -7.26   0.000    -.3795143   -.2179575
+               Operadores de instalaciones y maquinas  |  -.3552217   .0414427    -8.57   0.000    -.4365757   -.2738678
+                              Ocupaciones elementales  |  -.3006731   .0384668    -7.82   0.000    -.3761852   -.2251609
+                                                       |
+                                                  anio |
+                                                 2024  |   .0061926   .0154968     0.40   0.690    -.0242283    .0366135
+                                                 2025  |   .0544008   .0142985     3.80   0.000     .0263321    .0824695
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0324176    .036842    -0.88   0.379    -.1047401    .0399049
+                                                    3  |   .0024562   .0358466     0.07   0.945    -.0679123    .0728246
+                                                    4  |  -.0294217   .0383415    -0.77   0.443    -.1046878    .0458444
+                                                    5  |    .001893    .036301     0.05   0.958    -.0693675    .0731534
+                                                    6  |  -.0313316    .037369    -0.84   0.402    -.1046886    .0420254
+                                                    7  |  -.0148453    .038258    -0.39   0.698    -.0899476    .0602569
+                                                    8  |  -.0837042   .0372818    -2.25   0.025      -.15689   -.0105183
+                                                    9  |  -.0456909   .0362082    -1.26   0.207    -.1167693    .0253875
+                                                   10  |  -.0357877   .0384815    -0.93   0.353    -.1113287    .0397532
+                                                   11  |  -.0370278   .0394076    -0.94   0.348    -.1143867    .0403312
+                                                   12  |  -.0646812    .036907    -1.75   0.080    -.1371314    .0077689
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.2294495   .0121801   -18.84   0.000    -.2533595   -.2055394
+                                                 _cons |   1.668384   .0911432    18.31   0.000     1.489466    1.847302
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/I1_Informal.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/I1_Informal.ster saved
+
+MODELO: I2_TIC
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(40, 771)        =     166.45
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3495
+                                                Root MSE          =     .71858
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0502046    .002972    16.89   0.000     .0443705    .0560387
+                                 experiencia_potencial |   .0133811   .0016567     8.08   0.000     .0101289    .0166333
+                                          experiencia2 |  -.0002213   .0000344    -6.44   0.000    -.0002887   -.0001539
+                                               1.mujer |  -.1665293   .0125209   -13.30   0.000    -.1911083   -.1419502
+                                              1.casado |   .0778206   .0160992     4.83   0.000     .0462172     .109424
+                                          1.jefe_hogar |   .1392926   .0131971    10.55   0.000     .1133861    .1651991
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1403508    .094169     1.49   0.137    -.0445073    .3252089
+                                          Manufactura  |  -.1497883   .0650934    -2.30   0.022    -.2775697   -.0220069
+                        Servicios publicos y residuos  |  -.4241286   .0997642    -4.25   0.000    -.6199702   -.2282871
+                                         Construccion  |   .1175764   .0670205     1.75   0.080    -.0139879    .2491407
+                                             Comercio  |  -.3534463   .0673868    -5.25   0.000    -.4857296    -.221163
+                     Transporte, alojamiento y comida  |  -.1707056   .0654048    -2.61   0.009    -.2990981   -.0423131
+      Informacion, finanzas y servicios empresariales  |  -.1437051   .0656857    -2.19   0.029    -.2726492    -.014761
+            Administracion publica, educacion y salud  |  -.0184415   .0660433    -0.28   0.780    -.1480874    .1112044
+                                      Otros servicios  |  -.0496303   .0679743    -0.73   0.466    -.1830669    .0838063
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7910931   .0764599    10.35   0.000     .6409988    .9411875
+            Profesionales cientificos e intelectuales  |   .2268993   .0386152     5.88   0.000     .1510959    .3027027
+              Tecnicos y profesionales de nivel medio  |   .0544844   .0384928     1.42   0.157    -.0210786    .1300474
+                     Personal de apoyo administrativo  |  -.0284974   .0383426    -0.74   0.458    -.1037657    .0467709
+               Trabajadores de servicios y vendedores  |  -.3138371   .0406007    -7.73   0.000    -.3935381   -.2341362
+Agricultores y trabajadores agropecuarios calificados  |  -.5825577   .1792311    -3.25   0.001    -.9343966   -.2307189
+                     Oficiales, operarios y artesanos  |  -.2396509   .0422474    -5.67   0.000    -.3225845   -.1567173
+               Operadores de instalaciones y maquinas  |  -.2822721   .0423718    -6.66   0.000    -.3654499   -.1990944
+                              Ocupaciones elementales  |  -.2377076   .0397108    -5.99   0.000    -.3156617   -.1597535
+                                                       |
+                                                  anio |
+                                                 2024  |   .0075288    .015589     0.48   0.629     -.023073    .0381307
+                                                 2025  |   .0587418   .0142922     4.11   0.000     .0306855    .0867981
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0285501   .0351418    -0.81   0.417    -.0975351    .0404349
+                                                    3  |   .0051751   .0342476     0.15   0.880    -.0620545    .0724048
+                                                    4  |  -.0274656   .0364312    -0.75   0.451    -.0989818    .0440506
+                                                    5  |   -.000621   .0346524    -0.02   0.986    -.0686452    .0674031
+                                                    6  |  -.0383805   .0361165    -1.06   0.288    -.1092787    .0325178
+                                                    7  |  -.0175605   .0368007    -0.48   0.633    -.0898019    .0546809
+                                                    8  |  -.0883849   .0358898    -2.46   0.014    -.1588383   -.0179315
+                                                    9  |  -.0464741   .0345469    -1.35   0.179    -.1142913     .021343
+                                                   10  |  -.0348778   .0370148    -0.94   0.346    -.1075396    .0377839
+                                                   11  |  -.0339521   .0380041    -0.89   0.372    -.1085558    .0406516
+                                                   12  |  -.0668747   .0353783    -1.89   0.059    -.1363239    .0025745
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.2075328   .0119193   -17.41   0.000    -.2309309   -.1841348
+                                          1.tic_uso_pc |   .2270844   .0150318    15.11   0.000     .1975763    .2565926
+                                 actividades_centradas |   .0176905   .0038762     4.56   0.000     .0100814    .0252996
+                                                 _cons |    1.59678   .0884986    18.04   0.000     1.423053    1.770507
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/I2_TIC.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/I2_TIC.ster saved
+
+MODELO: M2_Principal
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 771)        =     160.26
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3499
+                                                Root MSE          =     .71837
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+                                 experiencia_potencial |   .0128489   .0016588     7.75   0.000     .0095926    .0161053
+                                          experiencia2 |  -.0002136   .0000344    -6.22   0.000     -.000281   -.0001461
+                                               1.mujer |  -.1691598   .0125177   -13.51   0.000    -.1937327    -.144587
+                                              1.casado |   .0782727   .0160883     4.87   0.000     .0466907    .1098547
+                                          1.jefe_hogar |    .139527   .0132351    10.54   0.000     .1135458    .1655081
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1450603   .0939529     1.54   0.123    -.0393735    .3294942
+                                          Manufactura  |  -.1428371    .064749    -2.21   0.028    -.2699423   -.0157319
+                        Servicios publicos y residuos  |  -.4212449   .0996674    -4.23   0.000    -.6168966   -.2255932
+                                         Construccion  |   .1205665    .066681     1.81   0.071    -.0103314    .2514645
+                                             Comercio  |  -.3490951   .0670361    -5.21   0.000      -.48069   -.2175003
+                     Transporte, alojamiento y comida  |  -.1685968   .0650539    -2.59   0.010    -.2963007    -.040893
+      Informacion, finanzas y servicios empresariales  |  -.1366917   .0653764    -2.09   0.037    -.2650285   -.0083548
+            Administracion publica, educacion y salud  |  -.0087522   .0657924    -0.13   0.894    -.1379057    .1204014
+                                      Otros servicios  |  -.0431507   .0676562    -0.64   0.524    -.1759629    .0896614
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7869194   .0765332    10.28   0.000     .6366812    .9371576
+            Profesionales cientificos e intelectuales  |   .2297089   .0389293     5.90   0.000     .1532889    .3061288
+              Tecnicos y profesionales de nivel medio  |   .0629184    .038705     1.63   0.104    -.0130612    .1388981
+                     Personal de apoyo administrativo  |  -.0227593   .0385875    -0.59   0.555    -.0985083    .0529896
+               Trabajadores de servicios y vendedores  |    -.30247   .0407335    -7.43   0.000    -.3824316   -.2225083
+Agricultores y trabajadores agropecuarios calificados  |  -.5731688   .1797173    -3.19   0.001     -.925962   -.2203755
+                     Oficiales, operarios y artesanos  |  -.2299584   .0425228    -5.41   0.000    -.3134325   -.1464842
+               Operadores de instalaciones y maquinas  |  -.2711754      .0425    -6.38   0.000    -.3546049   -.1877459
+                              Ocupaciones elementales  |  -.2278112   .0400173    -5.69   0.000    -.3063669   -.1492555
+                                                       |
+                                                  anio |
+                                                 2024  |   .0074246   .0156136     0.48   0.635    -.0232256    .0380748
+                                                 2025  |   .0595138   .0142773     4.17   0.000     .0314868    .0875407
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0270828   .0351803    -0.77   0.442    -.0961433    .0419778
+                                                    3  |   .0063841   .0341947     0.19   0.852    -.0607417    .0735099
+                                                    4  |  -.0265903   .0364733    -0.73   0.466    -.0981891    .0450085
+                                                    5  |   -.000831   .0346698    -0.02   0.981    -.0688895    .0672274
+                                                    6  |  -.0390555   .0361107    -1.08   0.280    -.1099425    .0318314
+                                                    7  |  -.0171976   .0368299    -0.47   0.641    -.0894964    .0551012
+                                                    8  |  -.0884491   .0359162    -2.46   0.014    -.1589543   -.0179439
+                                                    9  |  -.0462598   .0345304    -1.34   0.181    -.1140446    .0215249
+                                                   10  |  -.0349394   .0369877    -0.94   0.345    -.1075479    .0376692
+                                                   11  |  -.0335013   .0379403    -0.88   0.378    -.1079799    .0409774
+                                                   12  |  -.0671321   .0353656    -1.90   0.058    -.1365565    .0022922
+                                                       |
+                                          1.tic_uso_pc |   .2698177   .0184658    14.61   0.000     .2335684    .3060669
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1694448   .0163418   -10.37   0.000    -.2015245   -.1373651
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |  -.0830515   .0233987    -3.55   0.000    -.1289842   -.0371188
+                                                       |
+                                 actividades_centradas |   .0177992   .0047789     3.72   0.000     .0084181    .0271803
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0033641   .0072807    -0.46   0.644    -.0176563    .0109282
+                                                       |
+                                                 _cons |   1.559816   .0886616    17.59   0.000     1.385769    1.733863
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/M2_Principal.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/M2_Principal.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =  112.64
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    6.43
+            Prob > F =    0.0017
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4,   771) =   64.53
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1867661   .0197422     9.46   0.000     .1480112     .225521
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0144351   .0059065     2.44   0.015     .0028403    .0260299
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2524963   .0170626   -14.80   0.000    -.2859909   -.2190018
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0173213   .0193446     0.90   0.371     -.020653    .0552956
+------------------------------------------------------------------------------
+
+MODELO: R1_SinProductivos
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(24, 771)        =     161.92
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.2893
+                                                Root MSE          =     .75075
+
+                                    (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+--------------------------------------------------------------------------------------------------
+                                 |               Robust
+              y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------------+----------------------------------------------------------------
+                      educ_years |   .0784926   .0030137    26.05   0.000     .0725767    .0844086
+           experiencia_potencial |    .015909   .0017307     9.19   0.000     .0125116    .0193064
+                    experiencia2 |  -.0002386   .0000366    -6.52   0.000    -.0003104   -.0001668
+                         1.mujer |   -.187808   .0124298   -15.11   0.000    -.2122083   -.1634078
+                        1.casado |   .0809353   .0172992     4.68   0.000     .0469762    .1148945
+                    1.jefe_hogar |   .1457073   .0137053    10.63   0.000     .1188032    .1726114
+                                 |
+                            anio |
+                           2024  |   .0147582   .0163224     0.90   0.366    -.0172834    .0467998
+                           2025  |   .0669309   .0150394     4.45   0.000     .0374078    .0964539
+                                 |
+                         mes_num |
+                              2  |  -.0260917   .0353794    -0.74   0.461     -.095543    .0433596
+                              3  |  -.0049161   .0343147    -0.14   0.886    -.0722774    .0624452
+                              4  |  -.0264077   .0373233    -0.71   0.479    -.0996751    .0468597
+                              5  |  -.0012316   .0357131    -0.03   0.972    -.0713381    .0688749
+                              6  |  -.0498754   .0375586    -1.33   0.185    -.1236048    .0238539
+                              7  |  -.0177893   .0384402    -0.46   0.644    -.0932491    .0576705
+                              8  |  -.0813988   .0375202    -2.17   0.030    -.1550527   -.0077449
+                              9  |  -.0381272   .0360764    -1.06   0.291    -.1089468    .0326925
+                             10  |  -.0259121   .0380896    -0.68   0.497    -.1006837    .0488595
+                             11  |  -.0294772   .0391039    -0.75   0.451    -.1062399    .0472855
+                             12  |  -.0715206   .0362803    -1.97   0.049    -.1427405   -.0003006
+                                 |
+                    1.tic_uso_pc |   .4355593   .0192614    22.61   0.000     .3977482    .4733704
+                                 |
+                        informal |
+                Empleo informal  |  -.2056801   .0166794   -12.33   0.000    -.2384226   -.1729377
+                                 |
+             tic_uso_pc#informal |
+              1#Empleo informal  |  -.1274337   .0248001    -5.14   0.000    -.1761174     -.07875
+                                 |
+           actividades_centradas |   .0348867   .0050199     6.95   0.000     .0250325     .044741
+                                 |
+informal#c.actividades_centradas |
+                Empleo informal  |   -.000599    .007578    -0.08   0.937    -.0154751     .014277
+                                 |
+                           _cons |   .8518812   .0511277    16.66   0.000     .7515152    .9522472
+--------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R1_SinProductivos.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R1_SinProductivos.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =  277.24
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =   13.21
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4,   771) =  166.02
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .3081256   .0199065    15.48   0.000     .2690483     .347203
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0342877   .0061587     5.57   0.000     .0221978    .0463776
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.3331138    .017996   -18.51   0.000    -.3684408   -.2977869
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1024455   .0209179     4.90   0.000     .0613827    .1435083
+------------------------------------------------------------------------------
+
+MODELO: R2_Ajustado
+Dependiente: y_log_ingreso_hora_w
+Inferencia: Cluster marco
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 771)        =     187.06
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3785
+                                                Root MSE          =     .65119
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                  y_log_ingreso_hora_w | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0474116   .0026147    18.13   0.000     .0422789    .0525443
+                                 experiencia_potencial |   .0136142   .0014947     9.11   0.000       .01068    .0165484
+                                          experiencia2 |  -.0002284   .0000307    -7.45   0.000    -.0002887   -.0001682
+                                               1.mujer |  -.1518904   .0114065   -13.32   0.000    -.1742819    -.129499
+                                              1.casado |   .0798048   .0145171     5.50   0.000     .0513071    .1083024
+                                          1.jefe_hogar |   .1321378   .0121042    10.92   0.000     .1083766    .1558989
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1305775   .0887249     1.47   0.142    -.0435935    .3047485
+                                          Manufactura  |  -.1367279   .0623806    -2.19   0.029     -.259184   -.0142719
+                        Servicios publicos y residuos  |  -.3910819   .0936913    -4.17   0.000    -.5750022   -.2071616
+                                         Construccion  |   .1270176   .0643807     1.97   0.049     .0006354    .2533999
+                                             Comercio  |  -.3230481   .0636779    -5.07   0.000    -.4480508   -.1980454
+                     Transporte, alojamiento y comida  |  -.1589483   .0628262    -2.53   0.012    -.2822789   -.0356176
+      Informacion, finanzas y servicios empresariales  |   -.131318   .0628654    -2.09   0.037    -.2547255   -.0079104
+            Administracion publica, educacion y salud  |   -.004415   .0634313    -0.07   0.945    -.1289334    .1201035
+                                      Otros servicios  |  -.0527633   .0652734    -0.81   0.419     -.180898    .0753715
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7270429   .0677231    10.74   0.000     .5940994    .8599863
+            Profesionales cientificos e intelectuales  |   .2215266   .0376555     5.88   0.000     .1476073     .295446
+              Tecnicos y profesionales de nivel medio  |   .0463335   .0373163     1.24   0.215    -.0269201     .119587
+                     Personal de apoyo administrativo  |  -.0323632   .0374618    -0.86   0.388    -.1059025    .0411761
+               Trabajadores de servicios y vendedores  |  -.2942247   .0388951    -7.56   0.000    -.3705775   -.2178718
+Agricultores y trabajadores agropecuarios calificados  |  -.4999752   .1359924    -3.68   0.000    -.7669346   -.2330159
+                     Oficiales, operarios y artesanos  |  -.2423368   .0409032    -5.92   0.000    -.3226316   -.1620421
+               Operadores de instalaciones y maquinas  |  -.2844797   .0409136    -6.95   0.000    -.3647949   -.2041644
+                              Ocupaciones elementales  |  -.2422598   .0385517    -6.28   0.000    -.3179386   -.1665811
+                                                       |
+                                                  anio |
+                                                 2024  |   .0080054   .0143279     0.56   0.577    -.0201209    .0361316
+                                                 2025  |   .0589603   .0130709     4.51   0.000     .0333015     .084619
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0254405   .0307861    -0.83   0.409     -.085875     .034994
+                                                    3  |   .0010684   .0307833     0.03   0.972    -.0593606    .0614974
+                                                    4  |  -.0383734   .0336329    -1.14   0.254    -.1043962    .0276494
+                                                    5  |  -.0098867   .0316986    -0.31   0.755    -.0721126    .0523391
+                                                    6  |  -.0515975   .0330289    -1.56   0.119    -.1164347    .0132397
+                                                    7  |  -.0192625   .0336194    -0.57   0.567     -.085259    .0467339
+                                                    8  |  -.0864694   .0316802    -2.73   0.006    -.1486591   -.0242797
+                                                    9  |  -.0490655   .0314574    -1.56   0.119    -.1108178    .0126868
+                                                   10  |  -.0343958    .032609    -1.05   0.292    -.0984088    .0296172
+                                                   11  |  -.0404071    .034421    -1.17   0.241    -.1079771    .0271629
+                                                   12  |  -.0785269   .0324049    -2.42   0.016    -.1421391   -.0149146
+                                                       |
+                                          1.tic_uso_pc |   .2656767   .0171679    15.48   0.000     .2319753     .299378
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1627146   .0146352   -11.12   0.000    -.1914442    -.133985
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |   -.085978    .021967    -3.91   0.000    -.1291002   -.0428558
+                                                       |
+                                 actividades_centradas |   .0178621   .0045671     3.91   0.000     .0088967    .0268275
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0026468   .0068912    -0.38   0.701    -.0161745    .0108809
+                                                       |
+                                                 _cons |   1.594641   .0842166    18.94   0.000      1.42932    1.759962
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R2_Ajustado.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R2_Ajustado.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =  125.03
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    7.73
+            Prob > F =    0.0005
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4,   771) =   70.46
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~w | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1796987   .0186554     9.63   0.000     .1430772    .2163201
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~w | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0152153   .0055907     2.72   0.007     .0042404    .0261902
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~w | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2486926   .0163968   -15.17   0.000    -.2808802    -.216505
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~w | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |    .016984   .0179174     0.95   0.343    -.0181885    .0521566
+------------------------------------------------------------------------------
+
+MODELO: R3_P201P
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster P201P
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 15757)      =     219.00
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3499
+                                                Root MSE          =     .71837
+
+                                                            (Std. err. adjusted for 15,758 clusters in id_persona_p201p)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0504309   .0028851    17.48   0.000     .0447758    .0560861
+                                 experiencia_potencial |   .0128489   .0016613     7.73   0.000     .0095925    .0161054
+                                          experiencia2 |  -.0002136   .0000346    -6.16   0.000    -.0002815   -.0001457
+                                               1.mujer |  -.1691598   .0122341   -13.83   0.000    -.1931401   -.1451796
+                                              1.casado |   .0782727   .0152084     5.15   0.000     .0484625    .1080829
+                                          1.jefe_hogar |    .139527   .0128879    10.83   0.000     .1142652    .1647887
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1450603   .0975562     1.49   0.137    -.0461611    .3362817
+                                          Manufactura  |  -.1428371     .06843    -2.09   0.037    -.2769677   -.0087064
+                        Servicios publicos y residuos  |  -.4212449   .0970384    -4.34   0.000    -.6114513   -.2310385
+                                         Construccion  |   .1205665   .0690318     1.75   0.081    -.0147437    .2558768
+                                             Comercio  |  -.3490951   .0686169    -5.09   0.000    -.4835921   -.2145982
+                     Transporte, alojamiento y comida  |  -.1685968   .0682227    -2.47   0.013    -.3023212   -.0348724
+      Informacion, finanzas y servicios empresariales  |  -.1366917   .0680958    -2.01   0.045    -.2701673   -.0032161
+            Administracion publica, educacion y salud  |  -.0087522   .0684528    -0.13   0.898    -.1429275    .1254232
+                                      Otros servicios  |  -.0431507   .0692982    -0.62   0.534    -.1789831    .0926817
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7869194   .0714774    11.01   0.000     .6468155    .9270233
+            Profesionales cientificos e intelectuales  |   .2297089   .0385381     5.96   0.000     .1541698     .305248
+              Tecnicos y profesionales de nivel medio  |   .0629184   .0397273     1.58   0.113    -.0149515    .1407884
+                     Personal de apoyo administrativo  |  -.0227593    .038948    -0.58   0.559     -.099102    .0535833
+               Trabajadores de servicios y vendedores  |    -.30247   .0412672    -7.33   0.000    -.3833584   -.2215816
+Agricultores y trabajadores agropecuarios calificados  |  -.5731688    .182052    -3.15   0.002    -.9300116    -.216326
+                     Oficiales, operarios y artesanos  |  -.2299584   .0426326    -5.39   0.000    -.3135231   -.1463936
+               Operadores de instalaciones y maquinas  |  -.2711754   .0424495    -6.39   0.000    -.3543812   -.1879696
+                              Ocupaciones elementales  |  -.2278112   .0402585    -5.66   0.000    -.3067226   -.1488999
+                                                       |
+                                                  anio |
+                                                 2024  |   .0074246   .0132057     0.56   0.574    -.0184601    .0333093
+                                                 2025  |   .0595138   .0127621     4.66   0.000     .0344986     .084529
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0270828   .0282558    -0.96   0.338    -.0824674    .0283019
+                                                    3  |   .0063841   .0270467     0.24   0.813    -.0466306    .0593988
+                                                    4  |  -.0265903   .0273676    -0.97   0.331     -.080234    .0270534
+                                                    5  |   -.000831   .0263601    -0.03   0.975    -.0524999    .0508378
+                                                    6  |  -.0390555   .0280742    -1.39   0.164    -.0940842    .0159731
+                                                    7  |  -.0171976    .027365    -0.63   0.530    -.0708361    .0364409
+                                                    8  |  -.0884491   .0278015    -3.18   0.001    -.1429432    -.033955
+                                                    9  |  -.0462598   .0270491    -1.71   0.087    -.0992792    .0067595
+                                                   10  |  -.0349394   .0284363    -1.23   0.219    -.0906778    .0207991
+                                                   11  |  -.0335013   .0273856    -1.22   0.221    -.0871801    .0201776
+                                                   12  |  -.0671321   .0264784    -2.54   0.011    -.1190329   -.0152314
+                                                       |
+                                          1.tic_uso_pc |   .2698177   .0178724    15.10   0.000     .2347857    .3048496
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1694448   .0162853   -10.40   0.000    -.2013659   -.1375237
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |  -.0830515   .0227934    -3.64   0.000    -.1277293   -.0383738
+                                                       |
+                                 actividades_centradas |   .0177992   .0044513     4.00   0.000     .0090741    .0265243
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0033641   .0071344    -0.47   0.637    -.0173483    .0106201
+                                                       |
+                                                 _cons |   1.559816   .0880493    17.72   0.000     1.387229    1.732403
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R3_P201P.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R3_P201P.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2, 15757) =  118.73
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2, 15757) =    6.68
+            Prob > F =    0.0013
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4, 15757) =   69.73
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1867661    .018811     9.93   0.000     .1498944    .2236379
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0144351   .0057846     2.50   0.013     .0030965    .0257737
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2524963   .0171323   -14.74   0.000    -.2860775   -.2189152
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0173213   .0197204     0.88   0.380    -.0213329    .0559756
+------------------------------------------------------------------------------
+
+MODELO: R4_Hogar
+Dependiente: y_log_ingreso_hora
+Inferencia: Cluster hogar
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 8674)       =     198.26
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3499
+                                                Root MSE          =     .71837
+
+                                                               (Std. err. adjusted for 8,675 clusters in id_hogar_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0504309   .0029564    17.06   0.000     .0446357    .0562262
+                                 experiencia_potencial |   .0128489   .0016734     7.68   0.000     .0095687    .0161292
+                                          experiencia2 |  -.0002136    .000035    -6.11   0.000    -.0002821    -.000145
+                                               1.mujer |  -.1691598   .0120616   -14.02   0.000    -.1928035   -.1455161
+                                              1.casado |   .0782727   .0157486     4.97   0.000     .0474016    .1091438
+                                          1.jefe_hogar |    .139527   .0126783    11.01   0.000     .1146745    .1643794
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1450603   .0974405     1.49   0.137    -.0459461    .3360668
+                                          Manufactura  |  -.1428371   .0667618    -2.14   0.032    -.2737061    -.011968
+                        Servicios publicos y residuos  |  -.4212449   .0995627    -4.23   0.000    -.6164114   -.2260784
+                                         Construccion  |   .1205665    .067401     1.79   0.074    -.0115555    .2526886
+                                             Comercio  |  -.3490951   .0672107    -5.19   0.000    -.4808441   -.2173461
+                     Transporte, alojamiento y comida  |  -.1685968   .0663309    -2.54   0.011    -.2986212   -.0385724
+      Informacion, finanzas y servicios empresariales  |  -.1366917   .0664497    -2.06   0.040    -.2669488   -.0064346
+            Administracion publica, educacion y salud  |  -.0087522   .0669815    -0.13   0.896    -.1400517    .1225474
+                                      Otros servicios  |  -.0431507   .0678015    -0.64   0.525    -.1760577    .0897562
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7869194   .0767067    10.26   0.000     .6365561    .9372827
+            Profesionales cientificos e intelectuales  |   .2297089   .0396395     5.79   0.000      .152006    .3074117
+              Tecnicos y profesionales de nivel medio  |   .0629184   .0406565     1.55   0.122    -.0167779    .1426148
+                     Personal de apoyo administrativo  |  -.0227593   .0400445    -0.57   0.570     -.101256    .0557373
+               Trabajadores de servicios y vendedores  |    -.30247   .0424018    -7.13   0.000    -.3855876   -.2193524
+Agricultores y trabajadores agropecuarios calificados  |  -.5731688   .1826178    -3.14   0.002     -.931143   -.2151946
+                     Oficiales, operarios y artesanos  |  -.2299584   .0438548    -5.24   0.000    -.3159242   -.1439926
+               Operadores de instalaciones y maquinas  |  -.2711754   .0436307    -6.22   0.000    -.3567019   -.1856489
+                              Ocupaciones elementales  |  -.2278112   .0416247    -5.47   0.000    -.3094056   -.1462168
+                                                       |
+                                                  anio |
+                                                 2024  |   .0074246   .0138745     0.54   0.593    -.0197727    .0346219
+                                                 2025  |   .0595138   .0133363     4.46   0.000     .0333715    .0856561
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0270828   .0303282    -0.89   0.372    -.0865333    .0323677
+                                                    3  |   .0063841   .0280881     0.23   0.820    -.0486753    .0614435
+                                                    4  |  -.0265903    .029281    -0.91   0.364     -.083988    .0308074
+                                                    5  |   -.000831    .028298    -0.03   0.977    -.0563018    .0546398
+                                                    6  |  -.0390555   .0296156    -1.32   0.187    -.0971091    .0189981
+                                                    7  |  -.0171976    .029105    -0.59   0.555    -.0742504    .0398552
+                                                    8  |  -.0884491   .0305657    -2.89   0.004    -.1483652    -.028533
+                                                    9  |  -.0462598   .0288534    -1.60   0.109    -.1028193    .0102996
+                                                   10  |  -.0349394   .0317113    -1.10   0.271    -.0971011    .0272224
+                                                   11  |  -.0335013   .0294691    -1.14   0.256    -.0912676    .0242651
+                                                   12  |  -.0671321   .0289446    -2.32   0.020    -.1238705   -.0103938
+                                                       |
+                                          1.tic_uso_pc |   .2698177   .0179875    15.00   0.000     .2345579    .3050775
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1694448   .0165046   -10.27   0.000    -.2017977   -.1370919
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |  -.0830515   .0232056    -3.58   0.000    -.1285401    -.037563
+                                                       |
+                                 actividades_centradas |   .0177992   .0045602     3.90   0.000     .0088601    .0267382
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0033641   .0072779    -0.46   0.644    -.0176305    .0109023
+                                                       |
+                                                 _cons |   1.559816   .0882485    17.68   0.000     1.386828    1.732804
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R4_Hogar.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R4_Hogar.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,  8674) =  117.06
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,  8674) =    6.44
+            Prob > F =    0.0016
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4,  8674) =   68.47
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1867661   .0192444     9.70   0.000     .1490426    .2244897
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0144351   .0059778     2.41   0.016     .0027173     .026153
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2524963   .0175014   -14.43   0.000    -.2868033   -.2181894
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0173213   .0199182     0.87   0.385    -.0217231    .0563658
+------------------------------------------------------------------------------
+
+MODELO: R5_Ponderado
+Dependiente: y_log_ingreso_hora
+Inferencia: Ponderado cluster marco
+(sum of wgt is 15,847,755.034637)
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 771)        =     113.57
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3157
+                                                Root MSE          =      .7057
+
+                                                          (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0452781   .0032832    13.79   0.000     .0388329    .0517232
+                                 experiencia_potencial |   .0124783   .0018707     6.67   0.000      .008806    .0161506
+                                          experiencia2 |  -.0002193   .0000385    -5.69   0.000     -.000295   -.0001436
+                                               1.mujer |  -.1631086   .0146453   -11.14   0.000    -.1918579   -.1343592
+                                              1.casado |   .0787736   .0180062     4.37   0.000     .0434266    .1141206
+                                          1.jefe_hogar |   .1261893   .0152371     8.28   0.000     .0962782    .1561004
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1179647    .118413     1.00   0.319    -.1144855    .3504149
+                                          Manufactura  |  -.1558326   .0654133    -2.38   0.017    -.2842419   -.0274232
+                        Servicios publicos y residuos  |  -.4202782   .1130648    -3.72   0.000    -.6422296   -.1983267
+                                         Construccion  |    .111756   .0679162     1.65   0.100    -.0215666    .2450787
+                                             Comercio  |  -.3457719   .0667937    -5.18   0.000    -.4768909   -.2146529
+                     Transporte, alojamiento y comida  |  -.1876299   .0660463    -2.84   0.005    -.3172818   -.0579779
+      Informacion, finanzas y servicios empresariales  |  -.1353541    .065554    -2.06   0.039    -.2640396   -.0066686
+            Administracion publica, educacion y salud  |  -.0149848   .0670008    -0.22   0.823    -.1465105    .1165408
+                                      Otros servicios  |  -.0503472   .0689754    -0.73   0.466    -.1857491    .0850546
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |      .8273   .0875967     9.44   0.000     .6553436    .9992563
+            Profesionales cientificos e intelectuales  |   .2406051   .0525517     4.58   0.000     .1374436    .3437666
+              Tecnicos y profesionales de nivel medio  |   .0598684     .05052     1.19   0.236    -.0393046    .1590413
+                     Personal de apoyo administrativo  |  -.0436239   .0512002    -0.85   0.394    -.1441322    .0568845
+               Trabajadores de servicios y vendedores  |  -.2886999   .0529966    -5.45   0.000    -.3927346   -.1846651
+Agricultores y trabajadores agropecuarios calificados  |  -.6790588    .204497    -3.32   0.001    -1.080496   -.2776219
+                     Oficiales, operarios y artesanos  |   -.202231   .0563878    -3.59   0.000    -.3129229   -.0915391
+               Operadores de instalaciones y maquinas  |   -.265181   .0559297    -4.74   0.000    -.3749734   -.1553885
+                              Ocupaciones elementales  |   -.207808   .0529857    -3.92   0.000    -.3118213   -.1037948
+                                                       |
+                                                  anio |
+                                                 2024  |   .0045153   .0184885     0.24   0.807    -.0317785     .040809
+                                                 2025  |   .0605565   .0158661     3.82   0.000     .0294106    .0917023
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0419555   .0359518    -1.17   0.244    -.1125306    .0286196
+                                                    3  |  -.0008547   .0360171    -0.02   0.981    -.0715578    .0698484
+                                                    4  |  -.0372895   .0392829    -0.95   0.343    -.1144036    .0398245
+                                                    5  |  -.0374079   .0355267    -1.05   0.293    -.1071483    .0323326
+                                                    6  |  -.0534639   .0379369    -1.41   0.159    -.1279358     .021008
+                                                    7  |  -.0087626   .0339321    -0.26   0.796    -.0753728    .0578476
+                                                    8  |  -.0961919   .0342534    -2.81   0.005    -.1634329   -.0289508
+                                                    9  |   -.086144   .0337436    -2.55   0.011    -.1523841   -.0199038
+                                                   10  |  -.0453667   .0328676    -1.38   0.168    -.1098874     .019154
+                                                   11  |  -.0548436   .0395477    -1.39   0.166    -.1324776    .0227904
+                                                   12  |  -.0695012   .0347948    -2.00   0.046     -.137805   -.0011975
+                                                       |
+                                          1.tic_uso_pc |   .2355668   .0215707    10.92   0.000     .1932225    .2779111
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1739071   .0187726    -9.26   0.000    -.2107586   -.1370555
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |  -.0431772   .0268304    -1.61   0.108    -.0958464    .0094921
+                                                       |
+                                 actividades_centradas |   .0180571   .0057647     3.13   0.002     .0067407    .0293736
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0049189   .0083889    -0.59   0.558    -.0213868     .011549
+                                                       |
+                                                 _cons |   1.648722   .0950716    17.34   0.000     1.462092    1.835351
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R5_Ponderado.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R5_Ponderado.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =   65.47
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    1.46
+            Prob > F =    0.2337
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4,   771) =   42.97
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1923896    .021912     8.78   0.000     .1493753     .235404
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0131383   .0061126     2.15   0.032      .001139    .0251375
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2170842   .0199762   -10.87   0.000    -.2562984     -.17787
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0184826    .021619     0.85   0.393    -.0239566    .0609218
+------------------------------------------------------------------------------
+
+MODELO: R6_Robusto
+Dependiente: y_log_ingreso_hora
+Inferencia: Robusto sin agrupacion
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 18022)      =     233.72
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3499
+                                                Root MSE          =     .71837
+
+------------------------------------------------------------------------------------------------------------------------
+                                                       |               Robust
+                                    y_log_ingreso_hora | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------------------------------------------------+----------------------------------------------------------------
+                                            educ_years |   .0504309   .0028141    17.92   0.000     .0449151    .0559468
+                                 experiencia_potencial |   .0128489   .0016205     7.93   0.000     .0096726    .0160253
+                                          experiencia2 |  -.0002136   .0000338    -6.32   0.000    -.0002798   -.0001474
+                                               1.mujer |  -.1691598   .0118054   -14.33   0.000    -.1922996   -.1460201
+                                              1.casado |   .0782727     .01478     5.30   0.000     .0493025    .1072429
+                                          1.jefe_hogar |    .139527   .0123818    11.27   0.000     .1152574    .1637965
+                                                       |
+                                              sector10 |
+                                              Mineria  |   .1450603   .0966113     1.50   0.133    -.0443071    .3344278
+                                          Manufactura  |  -.1428371   .0671836    -2.13   0.034    -.2745234   -.0111507
+                        Servicios publicos y residuos  |  -.4212449   .0957995    -4.40   0.000     -.609021   -.2334687
+                                         Construccion  |   .1205665   .0676199     1.78   0.075     -.011975     .253108
+                                             Comercio  |  -.3490951   .0671542    -5.20   0.000    -.4807238   -.2174664
+                     Transporte, alojamiento y comida  |  -.1685968   .0668371    -2.52   0.012     -.299604   -.0375897
+      Informacion, finanzas y servicios empresariales  |  -.1366917   .0667142    -2.05   0.040    -.2674578   -.0059255
+            Administracion publica, educacion y salud  |  -.0087522   .0670646    -0.13   0.896    -.1402052    .1227009
+                                      Otros servicios  |  -.0431507    .067848    -0.64   0.525    -.1761393    .0898379
+                                                       |
+                                     ocupacion10_final |
+                                Directores y gerentes  |   .7869194   .0715581    11.00   0.000     .6466586    .9271802
+            Profesionales cientificos e intelectuales  |   .2297089   .0389883     5.89   0.000      .153288    .3061297
+              Tecnicos y profesionales de nivel medio  |   .0629184   .0399855     1.57   0.116     -.015457    .1412939
+                     Personal de apoyo administrativo  |  -.0227593   .0393014    -0.58   0.563    -.0997938    .0542752
+               Trabajadores de servicios y vendedores  |    -.30247   .0414322    -7.30   0.000     -.383681    -.221259
+Agricultores y trabajadores agropecuarios calificados  |  -.5731688   .1795843    -3.19   0.001    -.9251711   -.2211664
+                     Oficiales, operarios y artesanos  |  -.2299584   .0428765    -5.36   0.000    -.3140004   -.1459164
+               Operadores de instalaciones y maquinas  |  -.2711754   .0425592    -6.37   0.000    -.3545954   -.1877554
+                              Ocupaciones elementales  |  -.2278112   .0405007    -5.62   0.000    -.3071964   -.1484261
+                                                       |
+                                                  anio |
+                                                 2024  |   .0074246   .0134627     0.55   0.581    -.0189636    .0338128
+                                                 2025  |   .0595138   .0129305     4.60   0.000     .0341688    .0848587
+                                                       |
+                                               mes_num |
+                                                    2  |  -.0270828   .0277286    -0.98   0.329    -.0814336     .027268
+                                                    3  |   .0063841    .026049     0.25   0.806    -.0446744    .0574426
+                                                    4  |  -.0265903   .0263479    -1.01   0.313    -.0782346     .025054
+                                                    5  |   -.000831    .025699    -0.03   0.974    -.0512035    .0495414
+                                                    6  |  -.0390555   .0272006    -1.44   0.151    -.0923713    .0142603
+                                                    7  |  -.0171976   .0268648    -0.64   0.522    -.0698553    .0354601
+                                                    8  |  -.0884491    .027376    -3.23   0.001    -.1421087   -.0347894
+                                                    9  |  -.0462598   .0262785    -1.76   0.078    -.0977681    .0052484
+                                                   10  |  -.0349394   .0272297    -1.28   0.199    -.0883123    .0184335
+                                                   11  |  -.0335013   .0267493    -1.25   0.210    -.0859324    .0189299
+                                                   12  |  -.0671321   .0258022    -2.60   0.009    -.1177068   -.0165575
+                                                       |
+                                          1.tic_uso_pc |   .2698177   .0174819    15.43   0.000     .2355516    .3040838
+                                                       |
+                                              informal |
+                                      Empleo informal  |  -.1694448   .0160926   -10.53   0.000    -.2009879   -.1379017
+                                                       |
+                                   tic_uso_pc#informal |
+                                    1#Empleo informal  |  -.0830515   .0224905    -3.69   0.000    -.1271351    -.038968
+                                                       |
+                                 actividades_centradas |   .0177992   .0043605     4.08   0.000     .0092521    .0263463
+                                                       |
+                      informal#c.actividades_centradas |
+                                      Empleo informal  |  -.0033641   .0070771    -0.48   0.635    -.0172358    .0105077
+                                                       |
+                                                 _cons |   1.559816   .0868976    17.95   0.000     1.389488    1.730143
+------------------------------------------------------------------------------------------------------------------------
+(note: file $ENAHO_SALIDA/Estimaciones_MCO/R6_Robusto.ster not found)
+file $ENAHO_SALIDA/Estimaciones_MCO/R6_Robusto.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2, 18022) =  124.67
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2, 18022) =    6.87
+            Prob > F =    0.0010
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+ ( 3)  1.tic_uso_pc#1.informal = 0
+ ( 4)  1.informal#c.actividades_centradas = 0
+
+       F(  4, 18022) =   73.05
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1867661   .0185819    10.05   0.000     .1503439    .2231884
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0144351   .0057617     2.51   0.012     .0031417    .0257285
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2524963   .0168297   -15.00   0.000    -.2854842   -.2195084
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+y_log_ingr~a | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0173213   .0194594     0.89   0.373    -.0208209    .0554636
+------------------------------------------------------------------------------
+
+. 
+. 
+. * 5. CERRAR LOS ARCHIVOS DE RESULTADOS
+. 
+. postclose `Hcoef'
+
+. 
+. postclose `Hcontr'
+
+. 
+. postclose `Htest'
+
+. 
+. 
+. * 6. COMPARAR LAS ESPECIFICACIONES POR BLOQUES
+. 
+. display _newline "MODELOS INTERMEDIOS Y PRINCIPAL"
+
+MODELOS INTERMEDIOS Y PRINCIPAL
+
+. 
+. estimates table ///
+>     M1_Mincer I1_Informal I2_TIC M2_Principal, ///
+>     keep(educ_years experiencia_potencial experiencia2 ///
+>          1.informal 1.tic_uso_pc actividades_centradas ///
+>          1.tic_uso_pc#1.informal ///
+>          1.informal#c.actividades_centradas) ///
+>     b(%9.4f) se(%9.4f) stats(N r2)
+
+--------------------------------------------------------------
+    Variable | M1_Mincer   I1_Info~l    I2_TIC     M2_Prin~l  
+-------------+------------------------------------------------
+  educ_years |    0.0665      0.0603      0.0502      0.0504  
+             |    0.0031      0.0030      0.0030      0.0030  
+experienci~l |    0.0117      0.0090      0.0134      0.0128  
+             |    0.0017      0.0017      0.0017      0.0017  
+experiencia2 |   -0.0002     -0.0002     -0.0002     -0.0002  
+             |    0.0000      0.0000      0.0000      0.0000  
+             |
+    informal |
+Empleo in..  |               -0.2294     -0.2075     -0.1694  
+             |                0.0122      0.0119      0.0163  
+1.tic_uso_pc |                            0.2271      0.2698  
+             |                            0.0150      0.0185  
+actividade~s |                            0.0177      0.0178  
+             |                            0.0039      0.0048  
+             |
+  tic_uso_pc#|
+    informal |
+          1 #|
+Empleo in..  |                                       -0.0831  
+             |                                        0.0234  
+             |
+    informal#|
+          c. |
+actividade~s |
+Empleo in..  |                                       -0.0034  
+             |                                        0.0073  
+-------------+------------------------------------------------
+           N |     18065       18065       18065       18065  
+          r2 |    0.3288      0.3407      0.3495      0.3499  
+--------------------------------------------------------------
+                                                  Legend: b/se
+
+. 
+. 
+. display _newline "SENSIBILIDAD A CONTROLES PRODUCTIVOS Y RESULTADO AJUSTADO"
+
+SENSIBILIDAD A CONTROLES PRODUCTIVOS Y RESULTADO AJUSTADO
+
+. 
+. estimates table ///
+>     M2_Principal R1_SinProductivos R2_Ajustado, ///
+>     keep(1.informal 1.tic_uso_pc actividades_centradas ///
+>          1.tic_uso_pc#1.informal ///
+>          1.informal#c.actividades_centradas) ///
+>     b(%9.4f) se(%9.4f) stats(N r2)
+
+--------------------------------------------------
+    Variable | M2_Prin~l   R1_SinP~s   R2_Ajus~o  
+-------------+------------------------------------
+    informal |
+Empleo in..  |   -0.1694     -0.2057     -0.1627  
+             |    0.0163      0.0167      0.0146  
+1.tic_uso_pc |    0.2698      0.4356      0.2657  
+             |    0.0185      0.0193      0.0172  
+actividade~s |    0.0178      0.0349      0.0179  
+             |    0.0048      0.0050      0.0046  
+             |
+  tic_uso_pc#|
+    informal |
+          1 #|
+Empleo in..  |   -0.0831     -0.1274     -0.0860  
+             |    0.0234      0.0248      0.0220  
+             |
+    informal#|
+          c. |
+actividade~s |
+Empleo in..  |   -0.0034     -0.0006     -0.0026  
+             |    0.0073      0.0076      0.0069  
+-------------+------------------------------------
+           N |     18065       18065       18065  
+          r2 |    0.3499      0.2893      0.3785  
+--------------------------------------------------
+                                      Legend: b/se
+
+. 
+. 
+. display _newline "COMPARACION DE INFERENCIA Y PONDERACION"
+
+COMPARACION DE INFERENCIA Y PONDERACION
+
+. 
+. estimates table ///
+>     M2_Principal R3_P201P R4_Hogar R5_Ponderado R6_Robusto, ///
+>     keep(1.informal 1.tic_uso_pc actividades_centradas ///
+>          1.tic_uso_pc#1.informal ///
+>          1.informal#c.actividades_centradas) ///
+>     b(%9.4f) se(%9.4f) stats(N r2)
+
+--------------------------------------------------------------------------
+    Variable | M2_Prin~l   R3_P201P    R4_Hogar    R5_Pond~o   R6_Robu~o  
+-------------+------------------------------------------------------------
+    informal |
+Empleo in..  |   -0.1694     -0.1694     -0.1694     -0.1739     -0.1694  
+             |    0.0163      0.0163      0.0165      0.0188      0.0161  
+1.tic_uso_pc |    0.2698      0.2698      0.2698      0.2356      0.2698  
+             |    0.0185      0.0179      0.0180      0.0216      0.0175  
+actividade~s |    0.0178      0.0178      0.0178      0.0181      0.0178  
+             |    0.0048      0.0045      0.0046      0.0058      0.0044  
+             |
+  tic_uso_pc#|
+    informal |
+          1 #|
+Empleo in..  |   -0.0831     -0.0831     -0.0831     -0.0432     -0.0831  
+             |    0.0234      0.0228      0.0232      0.0268      0.0225  
+             |
+    informal#|
+          c. |
+actividade~s |
+Empleo in..  |   -0.0034     -0.0034     -0.0034     -0.0049     -0.0034  
+             |    0.0073      0.0071      0.0073      0.0084      0.0071  
+-------------+------------------------------------------------------------
+           N |     18065       18065       18065       18065       18065  
+          r2 |    0.3499      0.3499      0.3499      0.3157      0.3499  
+--------------------------------------------------------------------------
+                                                              Legend: b/se
+
+. 
+. 
+. * 7. DEJAR ACTIVO EL MODELO PRINCIPAL
+. 
+. estimates restore M2_Principal
+(results M2_Principal are active now)
+
+. 
+. assert e(N) == `n_mco'
+
+. 
+. display _newline "ETAPA 6 TERMINADA"
+
+ETAPA 6 TERMINADA
+
+. 
+. display "Resultados guardados en:"
+Resultados guardados en:
+
+. display "`resultados'"
+$ENAHO_SALIDA/Estimaciones_MCO
+
+. 
+. display "Archivos:"
+Archivos:
+
+. display "06_Estimaciones_MCO.log"
+06_Estimaciones_MCO.log
+
+. display "coeficientes_MCO.dta"
+coeficientes_MCO.dta
+
+. display "contrastes_MCO.dta"
+contrastes_MCO.dta
+
+. display "pruebas_MCO.dta"
+pruebas_MCO.dta
+
+. display "Estimaciones de cada modelo en archivos .ster"
+Estimaciones de cada modelo en archivos .ster
+
+. 
+. log close etapa06
+      name:  etapa06
+       log:  $ENAHO_SALIDA/Estimaciones_MCO/06_Estimaciones_MCO.log
+  log type:  text
+ closed on:  13 Oct 2026, 01:45:48
+----------------------------------------------------------------------------------------------------------------------------------------

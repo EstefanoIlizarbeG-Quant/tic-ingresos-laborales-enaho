@@ -1,0 +1,2217 @@
+REGISTRO ORIGINAL DE STATA APORTADO POR EL AUTOR. RUTAS LOCALES SUSTITUIDAS.
+NO ES UNA NUEVA EJECUCION DE ESTA COPIA DEL REPOSITORIO.
+
+------------------------------------------------------------------------------------------------------------------------
+      name:  forma08c
+       log:  $ENAHO_SALIDA/Forma_funcional_etapa08C/08C_Forma_funcional.log
+  log type:  text
+ opened on:  15 Oct 2026, 07:26:03
+
+. use "`salida'/base_mco_precios2025_etapa07.dta", clear
+
+. assert _N == 18065
+
+. assert muestra_salario_controles_final == 1
+
+. isid id_observacion
+
+. assert !missing(ln_ing_hora_real2025, educ_years, experiencia_potencial, experiencia2, mujer, casado, jefe_hogar, sect
+> or10, ocupacion10_final, anio, mes_num, tic_uso_pc, informal, actividades_centradas, id_conglomerado_marco)
+
+. local n_base = _N
+
+. 
+. generate double e_h6 = max(educ_years - 6, 0)
+
+. generate double e_h11 = max(educ_years - 11, 0)
+
+. generate double e_h16 = max(educ_years - 16, 0)
+
+. label variable e_h6 "Max(educacion - 6, 0)"
+
+. label variable e_h11 "Max(educacion - 11, 0)"
+
+. label variable e_h16 "Max(educacion - 16, 0)"
+
+. 
+. * Cobertura: identificar los tramos con pocos registros.
+. tabulate educ_years
+
+    Anos de |
+  educacion |
+segun regla |
+         de |
+construccio |
+          n |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          0 |         59        0.33        0.33
+          1 |         37        0.20        0.53
+          2 |         99        0.55        1.08
+          3 |        136        0.75        1.83
+          4 |        108        0.60        2.43
+          5 |         48        0.27        2.70
+          6 |        631        3.49        6.19
+          7 |        193        1.07        7.26
+          8 |        363        2.01        9.27
+          9 |        582        3.22       12.49
+         10 |        292        1.62       14.10
+         11 |      6,548       36.25       50.35
+         12 |        903        5.00       55.35
+         13 |        989        5.47       60.82
+         14 |      2,669       14.77       75.60
+         15 |        433        2.40       78.00
+         16 |      3,223       17.84       95.84
+         17 |        226        1.25       97.09
+         18 |        489        2.71       99.80
+         19 |         37        0.20      100.00
+------------+-----------------------------------
+      Total |     18,065      100.00
+
+. tabulate educ_years informal, row
+
++----------------+
+| Key            |
+|----------------|
+|   frequency    |
+| row percentage |
++----------------+
+
+   Anos de |
+ educacion |
+     segun | Empleo informal para
+  regla de |  el analisis: reglas
+construcci |        V7 y V8
+        on | Empleo fo  Empleo in |     Total
+-----------+----------------------+----------
+         0 |         9         50 |        59 
+           |     15.25      84.75 |    100.00 
+-----------+----------------------+----------
+         1 |         1         36 |        37 
+           |      2.70      97.30 |    100.00 
+-----------+----------------------+----------
+         2 |         9         90 |        99 
+           |      9.09      90.91 |    100.00 
+-----------+----------------------+----------
+         3 |        15        121 |       136 
+           |     11.03      88.97 |    100.00 
+-----------+----------------------+----------
+         4 |        18         90 |       108 
+           |     16.67      83.33 |    100.00 
+-----------+----------------------+----------
+         5 |         8         40 |        48 
+           |     16.67      83.33 |    100.00 
+-----------+----------------------+----------
+         6 |       103        528 |       631 
+           |     16.32      83.68 |    100.00 
+-----------+----------------------+----------
+         7 |        28        165 |       193 
+           |     14.51      85.49 |    100.00 
+-----------+----------------------+----------
+         8 |        60        303 |       363 
+           |     16.53      83.47 |    100.00 
+-----------+----------------------+----------
+         9 |        84        498 |       582 
+           |     14.43      85.57 |    100.00 
+-----------+----------------------+----------
+        10 |        47        245 |       292 
+           |     16.10      83.90 |    100.00 
+-----------+----------------------+----------
+        11 |     2,036      4,512 |     6,548 
+           |     31.09      68.91 |    100.00 
+-----------+----------------------+----------
+        12 |       338        565 |       903 
+           |     37.43      62.57 |    100.00 
+-----------+----------------------+----------
+        13 |       416        573 |       989 
+           |     42.06      57.94 |    100.00 
+-----------+----------------------+----------
+        14 |     1,529      1,140 |     2,669 
+           |     57.29      42.71 |    100.00 
+-----------+----------------------+----------
+        15 |       205        228 |       433 
+           |     47.34      52.66 |    100.00 
+-----------+----------------------+----------
+        16 |     2,327        896 |     3,223 
+           |     72.20      27.80 |    100.00 
+-----------+----------------------+----------
+        17 |       168         58 |       226 
+           |     74.34      25.66 |    100.00 
+-----------+----------------------+----------
+        18 |       416         73 |       489 
+           |     85.07      14.93 |    100.00 
+-----------+----------------------+----------
+        19 |        33          4 |        37 
+           |     89.19      10.81 |    100.00 
+-----------+----------------------+----------
+     Total |     7,850     10,215 |    18,065 
+           |     43.45      56.55 |    100.00 
+
+. preserve
+
+. contract anio educ_years informal, freq(N)
+
+. sort anio educ_years informal
+
+. save "`resultados'/cobertura_educacion.dta", replace
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/cobertura_educacion.dta saved
+
+. export delimited using "`resultados'/cobertura_educacion.csv", replace
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/cobertura_educacion.csv saved
+
+. restore
+
+. 
+. local personales "c.educ_years c.experiencia_potencial c.experiencia2 ib0.mujer ib0.casado ib0.jefe_hogar"
+
+. local productivas "ib1.sector10 ib0.ocupacion10_final"
+
+. local temporales "ib2023.anio ib1.mes_num"
+
+. local tic "ib0.tic_uso_pc##ib0.informal c.actividades_centradas##ib0.informal"
+
+. local mincer "`personales' `productivas' `temporales'"
+
+. 
+. tempname HT HX HE HC
+
+. postfile `HT' str24 modelo str40 prueba double F gl1 gl2 p N r2 grupos using "`resultados'/pruebas_forma_educacion.dta
+> ", replace
+
+. postfile `HX' str24 modelo str36 contraste double b se p li ls pct pct_li pct_ls N using "`resultados'/contrastes_TIC_
+> educacion.dta", replace
+
+. postfile `HE' str24 modelo byte desde hasta double b se p li ls pct pct_li pct_ls using "`resultados'/cambios_educacio
+> n.dta", replace
+
+. postfile `HC' str24 modelo str64 termino double b se p li ls N r2 grupos using "`resultados'/coeficientes_forma_educac
+> ion.dta", replace
+
+. 
+. capture program drop ec08_coef
+
+. program define ec08_coef
+  1.     args handle modelo
+  2.     tempname B V bb ss pp li ls crit
+  3.     matrix `B' = e(b)
+  4.     matrix `V' = e(V)
+  5.     local terminos : colnames `B'
+  6.     local k = colsof(`B')
+  7.     scalar `crit' = invttail(e(df_r), 0.025)
+  8.     forvalues j = 1/`k' {
+  9.         local termino : word `j' of `terminos'
+ 10.         scalar `bb' = `B'[1, `j']
+ 11.         scalar `ss' = sqrt(`V'[`j', `j'])
+ 12.         if `ss' > 0 & !missing(`ss') {
+ 13.             scalar `pp' = 2 * ttail(e(df_r), abs(`bb' / `ss'))
+ 14.             scalar `li' = `bb' - `crit' * `ss'
+ 15.             scalar `ls' = `bb' + `crit' * `ss'
+ 16.             post `handle' ("`modelo'") ("`termino'") (`bb') (`ss') (`pp') (`li') (`ls') (e(N)) (e(r2)) (e(N_clust))
+ 17.         }
+ 18.     }
+ 19. end
+
+. 
+. foreach familia in M1 M2 {
+  2.     foreach forma in Lineal Cuadratica Tramos {
+  3.         local modelo "`familia'_`forma'"
+  4.         local formula "`mincer'"
+  5.         if "`familia'" == "M2" local formula "`formula' `tic'"
+  6.         if "`forma'" == "Cuadratica" local formula "`formula' c.educ_years#c.educ_years"
+  7.         if "`forma'" == "Tramos" local formula "`formula' c.e_h6 c.e_h11 c.e_h16"
+  8.         display _newline "MODELO: `modelo'"
+  9.         regress ln_ing_hora_real2025 `formula', vce(cluster id_conglomerado_marco)
+ 10.         assert e(N) == 18065
+ 11.         assert e(N_clust) == 772
+ 12.         local r2_base = e(r2)
+ 13.         estimates store `modelo'
+ 14.         estimates save "`resultados'/`modelo'.ster", replace
+ 15.         ec08_coef `HC' `modelo'
+ 16. 
+.         if "`forma'" == "Cuadratica" {
+ 17.             test c.educ_years#c.educ_years
+ 18.             post `HT' ("`modelo'") ("Educacion al cuadrado") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(r2)) (e(N_cl
+> ust))
+ 19.         }
+ 20.         if "`forma'" == "Tramos" {
+ 21.             test e_h6 e_h11 e_h16
+ 22.             post `HT' ("`modelo'") ("Cambios de pendiente conjuntamente") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e
+> (r2)) (e(N_clust))
+ 23.         }
+ 24. 
+.         if "`familia'" == "M2" {
+ 25.             foreach comparacion in Uso_formal Uso_informal Intensidad_formal Intensidad_informal Brecha_usuarios In
+> formal_usuario_vs_formal_no {
+ 26.                 local expresion "1.tic_uso_pc"
+ 27.                 if "`comparacion'" == "Uso_informal" local expresion "1.tic_uso_pc + 1.tic_uso_pc#1.informal"
+ 28.                 if "`comparacion'" == "Intensidad_formal" local expresion "actividades_centradas"
+ 29.                 if "`comparacion'" == "Intensidad_informal" local expresion "actividades_centradas + 1.informal#c.a
+> ctividades_centradas"
+ 30.                 if "`comparacion'" == "Brecha_usuarios" local expresion "1.informal + 1.tic_uso_pc#1.informal"
+ 31.                 if "`comparacion'" == "Informal_usuario_vs_formal_no" local expresion "1.informal + 1.tic_uso_pc + 
+> 1.tic_uso_pc#1.informal"
+ 32.                 lincom `expresion'
+ 33.                 post `HX' ("`modelo'") ("`comparacion'") (r(estimate)) (r(se)) (r(p)) (r(lb)) (r(ub)) (100*(exp(r(e
+> stimate))-1)) (100*(exp(r(lb))-1)) (100*(exp(r(ub))-1)) (e(N))
+ 34.             }
+ 35.             test 1.tic_uso_pc actividades_centradas
+ 36.             post `HT' ("`modelo'") ("Bloque TIC entre formales") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(r2)) (e(
+> N_clust))
+ 37.             test 1.tic_uso_pc#1.informal 1.informal#c.actividades_centradas
+ 38.             post `HT' ("`modelo'") ("Interacciones TIC e informalidad") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (e(r
+> 2)) (e(N_clust))
+ 39.         }
+ 40. 
+.         * Cambio discreto de un anio de educacion, manteniendo los
+.         * demas regresores constantes: f(E+1)-f(E), no solo f'(E).
+.         foreach e in 5 10 15 18 {
+ 41.             local expresion "educ_years"
+ 42.             local hasta = `e' + 1
+ 43.             if "`forma'" == "Cuadratica" {
+ 44.                 local multiplicador = 2*`e' + 1
+ 45.                 local expresion "educ_years + `multiplicador'*c.educ_years#c.educ_years"
+ 46.             }
+ 47.             if "`forma'" == "Tramos" {
+ 48.                 foreach nudo in 6 11 16 {
+ 49.                     local delta = max(`hasta'-`nudo', 0) - max(`e'-`nudo', 0)
+ 50.                     if `delta' != 0 local expresion "`expresion' + `delta'*e_h`nudo'"
+ 51.                 }
+ 52.             }
+ 53.             lincom `expresion'
+ 54.             post `HE' ("`modelo'") (`e') (`hasta') (r(estimate)) (r(se)) (r(p)) (r(lb)) (r(ub)) (100*(exp(r(estimat
+> e))-1)) (100*(exp(r(lb))-1)) (100*(exp(r(ub))-1))
+ 55.         }
+ 56. 
+.         * Grafico de componente educativo y residuos parciales.
+.         * Es diagnostico: no es ingreso observado ni efecto causal.
+.         tempvar residuo ajuste componente parcial
+ 57.         predict double `residuo', residuals
+ 58.         predict double `ajuste', xb
+ 59.         generate double `componente' = _b[educ_years]*educ_years
+ 60.         if "`forma'" == "Cuadratica" replace `componente' = `componente' + _b[c.educ_years#c.educ_years]*educ_years
+> ^2
+ 61.         if "`forma'" == "Tramos" replace `componente' = `componente' + _b[e_h6]*e_h6 + _b[e_h11]*e_h11 + _b[e_h16]*
+> e_h16
+ 62.         generate double `parcial' = `residuo' + `componente'
+ 63.         preserve
+ 64.         collapse (count) N=`parcial' (mean) componente=`componente' residuo_parcial=`parcial', by(educ_years)
+ 65.         sort educ_years
+ 66.         save "`resultados'/componente_educacion_`modelo'.dta", replace
+ 67.         twoway (scatter residuo_parcial educ_years, mcolor(navy) msize(small)) (line componente educ_years, lcolor(
+> maroon)), title("`modelo': componente educativo") xtitle("Anios de educacion") ytitle("Componente educativo y residuo 
+> parcial") legend(order(1 "Media de residuos parciales" 2 "Componente estimado")) note("Media por anios observados. Dia
+> gnostico de forma funcional.") name(ec_graf, replace)
+ 68.         graph export "`resultados'/educacion_`modelo'.png", width(2000) replace
+ 69.         graph save ec_graf "`resultados'/educacion_`modelo'.gph", replace
+ 70.         restore
+ 71. 
+.         * RESET posterior a cada forma: se reporta, no se usa como
+.         * criterio automatico para seleccionar la especificacion.
+.         quietly summarize `ajuste'
+ 72.         tempvar z r2 r3 r4
+ 73.         generate double `z' = (`ajuste' - r(mean)) / r(sd)
+ 74.         generate double `r2' = `z'^2
+ 75.         generate double `r3' = `z'^3
+ 76.         generate double `r4' = `z'^4
+ 77.         regress ln_ing_hora_real2025 `formula' c.`r2' c.`r3' c.`r4', vce(cluster id_conglomerado_marco)
+ 78.         test `r2' `r3' `r4'
+ 79.         post `HT' ("`modelo'") ("RESET: potencias del ajuste") (r(F)) (r(df)) (r(df_r)) (r(p)) (e(N)) (`r2_base') (
+> e(N_clust))
+ 80.         drop `residuo' `ajuste' `componente' `parcial' `z' `r2' `r3' `r4'
+ 81.     }
+ 82. }
+
+MODELO: M1_Lineal
+
+Linear regression                               Number of obs     =     18,065
+                                                F(37, 771)        =     166.61
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3282
+                                                Root MSE          =     .72984
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+                                experiencia_potencial |   .0116584   .0016722     6.97   0.000     .0083757     .014941
+                                         experiencia2 |  -.0002011   .0000349    -5.77   0.000    -.0002695   -.0001327
+                                              1.mujer |  -.1896294   .0127794   -14.84   0.000    -.2147159   -.1645429
+                                             1.casado |   .0978565   .0163223     6.00   0.000     .0658151     .129898
+                                         1.jefe_hogar |   .1409089   .0134349    10.49   0.000     .1145356    .1672822
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .2240217   .0963694     2.32   0.020     .0348441    .4131992
+                                         Manufactura  |  -.0892185   .0695389    -1.28   0.200    -.2257265    .0472896
+                       Servicios publicos y residuos  |  -.3885944   .1044964    -3.72   0.000    -.5937255   -.1834632
+                                        Construccion  |   .1345588   .0714888     1.88   0.060    -.0057769    .2748945
+                                            Comercio  |  -.3307247   .0718554    -4.60   0.000      -.47178   -.1896693
+                    Transporte, alojamiento y comida  |  -.1605951   .0697408    -2.30   0.022    -.2974995   -.0236907
+     Informacion, finanzas y servicios empresariales  |  -.0714155   .0700501    -1.02   0.308    -.2089271    .0660961
+           Administracion publica, educacion y salud  |   .0311802   .0705271     0.44   0.659    -.1072678    .1696281
+                                     Otros servicios  |   -.036514   .0723878    -0.50   0.614    -.1786146    .1055867
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .7942032     .07679    10.34   0.000      .643461    .9449454
+           Profesionales cientificos e intelectuales  |   .1938277   .0381386     5.08   0.000     .1189599    .2686956
+             Tecnicos y profesionales de nivel medio  |  -.0013708   .0382991    -0.04   0.971    -.0765538    .0738121
+                    Personal de apoyo administrativo  |  -.0565675   .0380179    -1.49   0.137    -.1311984    .0180635
+              Trabajadores de servicios y vendedores  |  -.4745328   .0394432   -12.03   0.000    -.5519616    -.397104
+Agricultores y trabajadores agropecuarios califica..  |   -.791659   .1834451    -4.32   0.000     -1.15177   -.4315479
+                    Oficiales, operarios y artesanos  |  -.4487864   .0408446   -10.99   0.000    -.5289663   -.3686066
+              Operadores de instalaciones y maquinas  |  -.4920622    .041157   -11.96   0.000    -.5728553    -.411269
+                             Ocupaciones elementales  |  -.4324673   .0382747   -11.30   0.000    -.5076023   -.3573323
+                                                      |
+                                                 anio |
+                                                2024  |  -.0207994   .0155912    -1.33   0.183    -.0514056    .0098068
+                                                2025  |   .0143568   .0144702     0.99   0.321    -.0140489    .0427626
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0303467   .0369333    -0.82   0.412    -.1028483     .042155
+                                                   3  |   .0094397   .0361406     0.26   0.794    -.0615058    .0803853
+                                                   4  |  -.0279617   .0389396    -0.72   0.473    -.1044019    .0484785
+                                                   5  |   .0113766   .0367545     0.31   0.757    -.0607741    .0835274
+                                                   6  |  -.0252242   .0377496    -0.67   0.504    -.0993284      .04888
+                                                   7  |  -.0100697   .0387716    -0.26   0.795    -.0861801    .0660407
+                                                   8  |  -.0759377   .0373129    -2.04   0.042    -.1491846   -.0026908
+                                                   9  |  -.0432252   .0363699    -1.19   0.235    -.1146209    .0281705
+                                                  10  |  -.0310324   .0388011    -0.80   0.424    -.1072008    .0451359
+                                                  11  |  -.0300968    .039241    -0.77   0.443    -.1071287    .0469352
+                                                  12  |   -.059608   .0373006    -1.60   0.110    -.1328309    .0136148
+                                                      |
+                                                _cons |   1.543326   .0917135    16.83   0.000     1.363288    1.723364
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M1_Lineal.ster saved
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0665399   .0030643    21.71   0.000     .0605245    .0725552
+------------------------------------------------------------------------------
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M1_Lineal.dt
+    > a saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Lineal.png saved as
+    PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Lineal.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Lineal.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(40, 771)        =     168.74
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3300
+                                                Root MSE          =      .7289
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0644662   .0034359    18.76   0.000     .0577212    .0712111
+                                experiencia_potencial |   .0108095   .0017135     6.31   0.000     .0074459    .0141732
+                                         experiencia2 |  -.0001888   .0000362    -5.22   0.000    -.0002597   -.0001178
+                                              1.mujer |  -.1753681   .0136653   -12.83   0.000    -.2021937   -.1485424
+                                             1.casado |   .0828191   .0167801     4.94   0.000      .049879    .1157592
+                                         1.jefe_hogar |   .1267126   .0139143     9.11   0.000     .0993982     .154027
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1403823   .0946558     1.48   0.138    -.0454314    .3261959
+                                         Manufactura  |  -.0888905   .0669445    -1.33   0.185    -.2203057    .0425247
+                       Servicios publicos y residuos  |  -.3820723   .1038717    -3.68   0.000    -.5859772   -.1781673
+                                        Construccion  |   .1282107   .0692324     1.85   0.064    -.0076956     .264117
+                                            Comercio  |  -.3241941    .069444    -4.67   0.000    -.4605158   -.1878724
+                    Transporte, alojamiento y comida  |  -.1571147   .0671495    -2.34   0.020    -.2889323   -.0252972
+     Informacion, finanzas y servicios empresariales  |  -.0639333   .0674953    -0.95   0.344    -.1964296    .0685631
+           Administracion publica, educacion y salud  |   .0160538   .0678838     0.24   0.813    -.1172052    .1493129
+                                     Otros servicios  |  -.0336508   .0700183    -0.48   0.631       -.1711    .1037985
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .4251726   .1251619     3.40   0.001     .1794741    .6708711
+           Profesionales cientificos e intelectuales  |   .1124028   .0404756     2.78   0.006     .0329472    .1918583
+             Tecnicos y profesionales de nivel medio  |   .0173278   .0389198     0.45   0.656    -.0590735    .0937292
+                    Personal de apoyo administrativo  |  -.0214239   .0389081    -0.55   0.582    -.0978022    .0549543
+              Trabajadores de servicios y vendedores  |  -.4386963   .0404842   -10.84   0.000    -.5181686    -.359224
+Agricultores y trabajadores agropecuarios califica..  |  -.7371675    .177138    -4.16   0.000    -1.084897   -.3894376
+                    Oficiales, operarios y artesanos  |  -.3852018   .0422715    -9.11   0.000    -.4681826    -.302221
+              Operadores de instalaciones y maquinas  |  -.4265146   .0421622   -10.12   0.000    -.5092809   -.3437482
+                             Ocupaciones elementales  |  -.3859354   .0396019    -9.75   0.000    -.4636758    -.308195
+                                                      |
+                                                 anio |
+                                                2024  |  -.0186868   .0155757    -1.20   0.231    -.0492626    .0118889
+                                                2025  |   .0140003   .0144464     0.97   0.333    -.0143586    .0423592
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0281793   .0365474    -0.77   0.441    -.0999235    .0435649
+                                                   3  |   .0109819   .0357217     0.31   0.759    -.0591415    .0811053
+                                                   4  |  -.0256836   .0385145    -0.67   0.505    -.1012894    .0499222
+                                                   5  |   .0121041    .036138     0.33   0.738    -.0588366    .0830447
+                                                   6  |  -.0225075   .0371104    -0.61   0.544    -.0953568    .0503419
+                                                   7  |   -.007769   .0383232    -0.20   0.839    -.0829991    .0674612
+                                                   8  |   -.069956   .0367222    -1.91   0.057    -.1420433    .0021312
+                                                   9  |  -.0400156   .0357746    -1.12   0.264    -.1102427    .0302116
+                                                  10  |  -.0295256   .0383922    -0.77   0.442    -.1048913    .0458402
+                                                  11  |  -.0288896   .0386964    -0.75   0.456    -.1048524    .0470732
+                                                  12  |  -.0569119   .0368372    -1.54   0.123    -.1292249    .0154012
+                                                      |
+                                             __000009 |   .0556956   .0111672     4.99   0.000      .033774    .0776173
+                                             __00000A |   .0142786   .0053752     2.66   0.008     .0037268    .0248304
+                                             __00000B |   -.004945   .0019967    -2.48   0.013    -.0088646   -.0010253
+                                                _cons |   1.505744   .0944197    15.95   0.000     1.320394    1.691094
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __000009 = 0
+ ( 2)  __00000A = 0
+ ( 3)  __00000B = 0
+
+       F(  3,   771) =   14.67
+            Prob > F =    0.0000
+
+MODELO: M1_Cuadratica
+
+Linear regression                               Number of obs     =     18,065
+                                                F(38, 771)        =     174.96
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3361
+                                                Root MSE          =     .72554
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |  -.0530078   .0112287    -4.72   0.000    -.0750503   -.0309652
+                                experiencia_potencial |    .014414   .0016572     8.70   0.000     .0111608    .0176671
+                                         experiencia2 |  -.0002796   .0000345    -8.11   0.000    -.0003473    -.000212
+                                              1.mujer |  -.1993095     .01266   -15.74   0.000    -.2241616   -.1744574
+                                             1.casado |   .0945817   .0158516     5.97   0.000     .0634642    .1256992
+                                         1.jefe_hogar |   .1372856   .0133492    10.28   0.000     .1110804    .1634907
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1959616   .0939571     2.09   0.037     .0115196    .3804037
+                                         Manufactura  |   -.075335   .0691914    -1.09   0.277     -.211161    .0604909
+                       Servicios publicos y residuos  |  -.4067702   .1037733    -3.92   0.000    -.6104818   -.2030585
+                                        Construccion  |   .1480166   .0714462     2.07   0.039     .0077644    .2882688
+                                            Comercio  |  -.3168591   .0717614    -4.42   0.000      -.45773   -.1759882
+                    Transporte, alojamiento y comida  |  -.1466458   .0693424    -2.11   0.035    -.2827682   -.0105235
+     Informacion, finanzas y servicios empresariales  |  -.0581144   .0698935    -0.83   0.406    -.1953186    .0790897
+           Administracion publica, educacion y salud  |    .036961   .0700203     0.53   0.598    -.1004921    .1744141
+                                     Otros servicios  |  -.0211458    .071837    -0.29   0.769    -.1621651    .1198734
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .6542312   .0746508     8.76   0.000     .5076884    .8007741
+           Profesionales cientificos e intelectuales  |   .0824338   .0384694     2.14   0.032     .0069165    .1579511
+             Tecnicos y profesionales de nivel medio  |  -.0273757   .0383853    -0.71   0.476    -.1027277    .0479764
+                    Personal de apoyo administrativo  |  -.0814114   .0376625    -2.16   0.031    -.1553445   -.0074782
+              Trabajadores de servicios y vendedores  |  -.4478103   .0394974   -11.34   0.000    -.5253456   -.3702751
+Agricultores y trabajadores agropecuarios califica..  |  -.7890167    .183246    -4.31   0.000    -1.148737   -.4292964
+                    Oficiales, operarios y artesanos  |  -.4137714   .0408591   -10.13   0.000    -.4939796   -.3335632
+              Operadores de instalaciones y maquinas  |  -.4565177   .0410624   -11.12   0.000     -.537125   -.3759104
+                             Ocupaciones elementales  |  -.4104665   .0384754   -10.67   0.000    -.4859954   -.3349376
+                                                      |
+                                                 anio |
+                                                2024  |   -.018956   .0154364    -1.23   0.220    -.0492583    .0113464
+                                                2025  |   .0136104   .0144626     0.94   0.347    -.0147803    .0420011
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0301576   .0362232    -0.83   0.405    -.1012654    .0409503
+                                                   3  |   .0148288   .0355381     0.42   0.677     -.054934    .0845917
+                                                   4  |  -.0266694   .0379425    -0.70   0.482    -.1011522    .0478134
+                                                   5  |   .0171208    .036074     0.47   0.635    -.0536942    .0879358
+                                                   6  |  -.0227963   .0367231    -0.62   0.535    -.0948854    .0492929
+                                                   7  |  -.0061695   .0380409    -0.16   0.871    -.0808455    .0685064
+                                                   8  |  -.0701364   .0366143    -1.92   0.056    -.1420119     .001739
+                                                   9  |  -.0401972   .0354295    -1.13   0.257    -.1097471    .0293526
+                                                  10  |  -.0288933   .0378405    -0.76   0.445     -.103176    .0453893
+                                                  11  |   -.030712   .0377796    -0.81   0.417     -.104875    .0434511
+                                                  12  |  -.0529675   .0366351    -1.45   0.149    -.1248839     .018949
+                                                      |
+                            c.educ_years#c.educ_years |   .0056538   .0004928    11.47   0.000     .0046864    .0066211
+                                                      |
+                                                _cons |   2.088307   .1033783    20.20   0.000      1.88537    2.291243
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M1_Cuadratica.ster saved
+
+ ( 1)  c.educ_years#c.educ_years = 0
+
+       F(  1,   771) =  131.63
+            Prob > F =    0.0000
+
+ ( 1)  educ_years + 11*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0091838   .0061588     1.49   0.136    -.0029062    .0212738
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 21*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0657216   .0029643    22.17   0.000     .0599025    .0715407
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 31*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1222594   .0053115    23.02   0.000     .1118327    .1326861
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 37*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1561821   .0079486    19.65   0.000     .1405787    .1717855
+------------------------------------------------------------------------------
+(18,006 real changes made)
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M1_Cuadratic
+    > a.dta saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Cuadratica.png
+    saved as PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Cuadratica.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Cuadratica.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(41, 771)        =     174.97
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3388
+                                                Root MSE          =     .72412
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |  -.0516723   .0121601    -4.25   0.000    -.0755432   -.0278014
+                                experiencia_potencial |   .0101611   .0017592     5.78   0.000     .0067077    .0136146
+                                         experiencia2 |  -.0001895    .000037    -5.12   0.000    -.0002622   -.0001169
+                                              1.mujer |   -.147006    .014105   -10.42   0.000    -.1746948   -.1193173
+                                             1.casado |   .0726704   .0163499     4.44   0.000     .0405749     .104766
+                                         1.jefe_hogar |   .1024184   .0142271     7.20   0.000     .0744899    .1303469
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1523408   .0940297     1.62   0.106    -.0322438    .3369253
+                                         Manufactura  |  -.0572245   .0690241    -0.83   0.407    -.1927221     .078273
+                       Servicios publicos y residuos  |  -.2876292   .1041007    -2.76   0.006    -.4919836   -.0832748
+                                        Construccion  |   .1458013   .0715019     2.04   0.042     .0054397    .2861628
+                                            Comercio  |  -.2367036   .0715716    -3.31   0.001    -.3772019   -.0962053
+                    Transporte, alojamiento y comida  |  -.1222951   .0690969    -1.77   0.077    -.2579355    .0133453
+     Informacion, finanzas y servicios empresariales  |  -.0368851   .0696779    -0.53   0.597     -.173666    .0998958
+           Administracion publica, educacion y salud  |   .0325015   .0698951     0.47   0.642    -.1047058    .1697088
+                                     Otros servicios  |  -.0241267   .0719706    -0.34   0.738    -.1654083    .1171549
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .4011042   .1050736     3.82   0.000     .1948399    .6073685
+           Profesionales cientificos e intelectuales  |    .027851   .0396356     0.70   0.482    -.0499554    .1056575
+             Tecnicos y profesionales de nivel medio  |   -.027987   .0388303    -0.72   0.471    -.1042126    .0482385
+                    Personal de apoyo administrativo  |  -.0791237   .0383373    -2.06   0.039    -.1543815   -.0038658
+              Trabajadores de servicios y vendedores  |  -.4108635   .0404922   -10.15   0.000    -.4903516   -.3313755
+Agricultores y trabajadores agropecuarios califica..  |  -.6451411   .1810952    -3.56   0.000    -1.000639   -.2896429
+                    Oficiales, operarios y artesanos  |  -.3906185   .0418073    -9.34   0.000    -.4726881   -.3085488
+              Operadores de instalaciones y maquinas  |   -.420219   .0417928   -10.05   0.000    -.5022603   -.3381778
+                             Ocupaciones elementales  |  -.3910313   .0391981    -9.98   0.000     -.467979   -.3140836
+                                                      |
+                                                 anio |
+                                                2024  |  -.0141603   .0154205    -0.92   0.359    -.0444315    .0161109
+                                                2025  |   .0107338   .0144138     0.74   0.457    -.0175612    .0390287
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0266189   .0362031    -0.74   0.462    -.0976872    .0444495
+                                                   3  |   .0112775   .0354135     0.32   0.750    -.0582408    .0807957
+                                                   4  |  -.0227162   .0379656    -0.60   0.550    -.0972444     .051812
+                                                   5  |   .0112117   .0360825     0.31   0.756    -.0596198    .0820432
+                                                   6  |  -.0186748    .036417    -0.51   0.608    -.0901629    .0528134
+                                                   7  |  -.0080438   .0380088    -0.21   0.832    -.0826567    .0665692
+                                                   8  |  -.0533423   .0361092    -1.48   0.140    -.1242263    .0175417
+                                                   9  |  -.0323034   .0354315    -0.91   0.362    -.1018569    .0372502
+                                                  10  |  -.0227559   .0374666    -0.61   0.544    -.0963046    .0507928
+                                                  11  |  -.0259765   .0376827    -0.69   0.491    -.0999494    .0479964
+                                                  12  |  -.0433345   .0365531    -1.19   0.236    -.1150898    .0284209
+                                                      |
+                            c.educ_years#c.educ_years |   .0048629   .0005518     8.81   0.000     .0037796    .0059462
+                                                      |
+                                             __00000H |   .0098322   .0102662     0.96   0.339    -.0103208    .0299851
+                                             __00000I |   .0540481   .0084525     6.39   0.000     .0374555    .0706406
+                                             __00000J |  -.0133541   .0023869    -5.59   0.000    -.0180397   -.0086686
+                                                _cons |   2.181982   .1090059    20.02   0.000     1.967999    2.395966
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __00000H = 0
+ ( 2)  __00000I = 0
+ ( 3)  __00000J = 0
+
+       F(  3,   771) =   15.42
+            Prob > F =    0.0000
+
+MODELO: M1_Tramos
+
+Linear regression                               Number of obs     =     18,065
+                                                F(40, 771)        =     176.27
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3361
+                                                Root MSE          =     .72556
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0265194   .0159908     1.66   0.098    -.0048713    .0579101
+                                experiencia_potencial |   .0135483   .0016567     8.18   0.000     .0102961    .0168006
+                                         experiencia2 |  -.0002606   .0000345    -7.55   0.000    -.0003284   -.0001929
+                                              1.mujer |  -.1979704   .0126295   -15.68   0.000    -.2227626   -.1731781
+                                             1.casado |   .0928992   .0159033     5.84   0.000     .0616803    .1241181
+                                         1.jefe_hogar |    .135449   .0133128    10.17   0.000     .1093155    .1615826
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1870062   .0935914     2.00   0.046     .0032821    .3707304
+                                         Manufactura  |  -.0777917   .0696658    -1.12   0.264    -.2145488    .0589654
+                       Servicios publicos y residuos  |  -.4028077   .1038173    -3.88   0.000    -.6066058   -.1990096
+                                        Construccion  |   .1448368   .0717062     2.02   0.044     .0040742    .2855994
+                                            Comercio  |  -.3203487    .072191    -4.44   0.000    -.4620628   -.1786345
+                    Transporte, alojamiento y comida  |  -.1518351   .0698435    -2.17   0.030     -.288941   -.0147291
+     Informacion, finanzas y servicios empresariales  |   -.059914   .0703176    -0.85   0.394    -.1979507    .0781227
+           Administracion publica, educacion y salud  |   .0267003   .0704999     0.38   0.705    -.1116943    .1650949
+                                     Otros servicios  |  -.0264399   .0723267    -0.37   0.715    -.1684204    .1155407
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .6346775   .0735868     8.62   0.000     .4902232    .7791318
+           Profesionales cientificos e intelectuales  |   .0859713   .0385351     2.23   0.026     .0103251    .1616174
+             Tecnicos y profesionales de nivel medio  |     -.0316   .0384191    -0.82   0.411    -.1070184    .0438184
+                    Personal de apoyo administrativo  |  -.0845696   .0378048    -2.24   0.026    -.1587821   -.0103571
+              Trabajadores de servicios y vendedores  |  -.4612911   .0397334   -11.61   0.000    -.5392894   -.3832927
+Agricultores y trabajadores agropecuarios califica..  |  -.7985049   .1824572    -4.38   0.000    -1.156677    -.440333
+                    Oficiales, operarios y artesanos  |  -.4307694   .0410204   -10.50   0.000    -.5112942   -.3502445
+              Operadores de instalaciones y maquinas  |    -.46888   .0412114   -11.38   0.000    -.5497799   -.3879801
+                             Ocupaciones elementales  |  -.4258526    .038779   -10.98   0.000    -.5019775   -.3497277
+                                                      |
+                                                 anio |
+                                                2024  |  -.0184046   .0154212    -1.19   0.233    -.0486772    .0118679
+                                                2025  |   .0149911   .0144357     1.04   0.299    -.0133469     .043329
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0285622   .0361565    -0.79   0.430    -.0995391    .0424147
+                                                   3  |   .0154847   .0352606     0.44   0.661    -.0537335    .0847029
+                                                   4  |  -.0259579   .0377892    -0.69   0.492    -.1001399     .048224
+                                                   5  |   .0192876   .0358626     0.54   0.591    -.0511123    .0896875
+                                                   6  |  -.0224444   .0364775    -0.62   0.539    -.0940514    .0491626
+                                                   7  |  -.0056999   .0378256    -0.15   0.880    -.0799534    .0685535
+                                                   8  |  -.0698649   .0366162    -1.91   0.057    -.1417442    .0020144
+                                                   9  |   -.038546   .0351964    -1.10   0.274    -.1076382    .0305462
+                                                  10  |  -.0301335   .0378433    -0.80   0.426    -.1044215    .0441546
+                                                  11  |   -.030472   .0376377    -0.81   0.418    -.1043566    .0434125
+                                                  12  |  -.0531693   .0365363    -1.46   0.146    -.1248917    .0185532
+                                                      |
+                                                 e_h6 |   .0080426   .0195968     0.41   0.682    -.0304268    .0465121
+                                                e_h11 |   .0566532   .0078083     7.26   0.000     .0413253    .0719812
+                                                e_h16 |   .1218688   .0171839     7.09   0.000     .0881359    .1556016
+                                                _cons |   1.875008   .1199311    15.63   0.000     1.639578    2.110439
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M1_Tramos.ster saved
+
+ ( 1)  e_h6 = 0
+ ( 2)  e_h11 = 0
+ ( 3)  e_h16 = 0
+
+       F(  3,   771) =   55.88
+            Prob > F =    0.0000
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0265194   .0159908     1.66   0.098    -.0048713    .0579101
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |    .034562    .006294     5.49   0.000     .0222067    .0469174
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 + e_h11 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0912153   .0041694    21.88   0.000     .0830306    .0993999
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 + e_h11 + e_h16 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |    .213084   .0163514    13.03   0.000     .1809855    .2451826
+------------------------------------------------------------------------------
+(16,947 real changes made)
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M1_Tramos.dt
+    > a saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Tramos.png saved as
+    PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Tramos.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M1_Tramos.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(43, 771)        =     169.75
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3382
+                                                Root MSE          =     .72447
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |  -.0031112   .0165726    -0.19   0.851     -.035644    .0294215
+                                experiencia_potencial |   .0102226   .0017351     5.89   0.000     .0068166    .0136286
+                                         experiencia2 |  -.0001897   .0000366    -5.18   0.000    -.0002616   -.0001178
+                                              1.mujer |   -.155008   .0141645   -10.94   0.000    -.1828136   -.1272023
+                                             1.casado |   .0769201   .0163817     4.70   0.000     .0447621    .1090781
+                                         1.jefe_hogar |   .1071967   .0141974     7.55   0.000     .0793265    .1350668
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1683954   .0950491     1.77   0.077    -.0181902    .3549811
+                                         Manufactura  |  -.0609036   .0696856    -0.87   0.382    -.1976997    .0758924
+                       Servicios publicos y residuos  |  -.2944277   .1042209    -2.83   0.005    -.4990181   -.0898372
+                                        Construccion  |   .1450517     .07193     2.02   0.044     .0038498    .2862535
+                                            Comercio  |  -.2481963   .0722741    -3.43   0.001    -.3900736   -.1063189
+                    Transporte, alojamiento y comida  |   -.129157   .0698202    -1.85   0.065    -.2662172    .0079033
+     Informacion, finanzas y servicios empresariales  |  -.0420541   .0702706    -0.60   0.550    -.1799985    .0958902
+           Administracion publica, educacion y salud  |   .0289735   .0705643     0.41   0.681    -.1095473    .1674944
+                                     Otros servicios  |  -.0283246   .0725308    -0.39   0.696    -.1707058    .1140566
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |    .502173   .1070841     4.69   0.000     .2919619     .712384
+           Profesionales cientificos e intelectuales  |   .0470793   .0394477     1.19   0.233    -.0303584     .124517
+             Tecnicos y profesionales de nivel medio  |  -.0351268   .0386983    -0.91   0.364    -.1110933    .0408398
+                    Personal de apoyo administrativo  |  -.0865053   .0383274    -2.26   0.024    -.1617437   -.0112669
+              Trabajadores de servicios y vendedores  |  -.4247092     .04076   -10.42   0.000    -.5047229   -.3446954
+Agricultores y trabajadores agropecuarios califica..  |  -.6607508   .1769437    -3.73   0.000    -1.008099   -.3134022
+                    Oficiales, operarios y artesanos  |  -.4105556   .0422512    -9.72   0.000    -.4934966   -.3276145
+              Operadores de instalaciones y maquinas  |   -.438214   .0420253   -10.43   0.000    -.5207115   -.3557165
+                             Ocupaciones elementales  |  -.4070907   .0395336   -10.30   0.000    -.4846969   -.3294846
+                                                      |
+                                                 anio |
+                                                2024  |  -.0144188   .0154318    -0.93   0.350    -.0447121    .0158745
+                                                2025  |   .0126061   .0144183     0.87   0.382    -.0156978    .0409099
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0266068    .036225    -0.73   0.463    -.0977182    .0445045
+                                                   3  |   .0111577   .0352466     0.32   0.752    -.0580331    .0803484
+                                                   4  |  -.0238555    .037925    -0.63   0.530    -.0983039    .0505929
+                                                   5  |   .0125317   .0359496     0.35   0.727     -.058039    .0831024
+                                                   6  |  -.0195338   .0363324    -0.54   0.591    -.0908559    .0517884
+                                                   7  |  -.0071434   .0379288    -0.19   0.851    -.0815994    .0673126
+                                                   8  |  -.0561661   .0362925    -1.55   0.122    -.1274099    .0150776
+                                                   9  |  -.0325922   .0353264    -0.92   0.357    -.1019395    .0367552
+                                                  10  |  -.0253065   .0376735    -0.67   0.502    -.0992613    .0486483
+                                                  11  |   -.026379   .0375884    -0.70   0.483    -.1001668    .0474089
+                                                  12  |  -.0448184   .0365309    -1.23   0.220    -.1165302    .0268934
+                                                      |
+                                                 e_h6 |   .0269615   .0196868     1.37   0.171    -.0116846    .0656076
+                                                e_h11 |   .0562783   .0077988     7.22   0.000      .040969    .0715876
+                                                e_h16 |   .0690502   .0253604     2.72   0.007     .0192666    .1188338
+                                             __00000P |  -.0002924    .009983    -0.03   0.977    -.0198896    .0193047
+                                             __00000Q |   .0473575    .008407     5.63   0.000     .0308541    .0638608
+                                             __00000R |  -.0115201   .0021152    -5.45   0.000    -.0156724   -.0073678
+                                                _cons |   2.109336   .1262177    16.71   0.000     1.861565    2.357107
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __00000P = 0
+ ( 2)  __00000Q = 0
+ ( 3)  __00000R = 0
+
+       F(  3,   771) =   10.93
+            Prob > F =    0.0000
+
+MODELO: M2_Lineal
+
+Linear regression                               Number of obs     =     18,065
+                                                F(42, 771)        =     159.98
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3493
+                                                Root MSE          =     .71837
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+                                experiencia_potencial |   .0128489   .0016588     7.75   0.000     .0095926    .0161053
+                                         experiencia2 |  -.0002136   .0000344    -6.22   0.000     -.000281   -.0001461
+                                              1.mujer |  -.1691598   .0125177   -13.51   0.000    -.1937327    -.144587
+                                             1.casado |   .0782727   .0160883     4.87   0.000     .0466907    .1098547
+                                         1.jefe_hogar |    .139527   .0132351    10.54   0.000     .1135458    .1655081
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1450603   .0939529     1.54   0.123    -.0393735    .3294942
+                                         Manufactura  |  -.1428371    .064749    -2.21   0.028    -.2699423   -.0157319
+                       Servicios publicos y residuos  |  -.4212449   .0996674    -4.23   0.000    -.6168966   -.2255932
+                                        Construccion  |   .1205665    .066681     1.81   0.071    -.0103314    .2514645
+                                            Comercio  |  -.3490951   .0670361    -5.21   0.000      -.48069   -.2175003
+                    Transporte, alojamiento y comida  |  -.1685968   .0650539    -2.59   0.010    -.2963007    -.040893
+     Informacion, finanzas y servicios empresariales  |  -.1366917   .0653764    -2.09   0.037    -.2650285   -.0083548
+           Administracion publica, educacion y salud  |  -.0087522   .0657924    -0.13   0.894    -.1379057    .1204014
+                                     Otros servicios  |  -.0431507   .0676562    -0.64   0.524    -.1759629    .0896614
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .7869194   .0765332    10.28   0.000     .6366812    .9371576
+           Profesionales cientificos e intelectuales  |   .2297089   .0389293     5.90   0.000     .1532889    .3061288
+             Tecnicos y profesionales de nivel medio  |   .0629184    .038705     1.63   0.104    -.0130612    .1388981
+                    Personal de apoyo administrativo  |  -.0227593   .0385875    -0.59   0.555    -.0985083    .0529896
+              Trabajadores de servicios y vendedores  |    -.30247   .0407335    -7.43   0.000    -.3824316   -.2225083
+Agricultores y trabajadores agropecuarios califica..  |  -.5731688   .1797173    -3.19   0.001     -.925962   -.2203755
+                    Oficiales, operarios y artesanos  |  -.2299584   .0425228    -5.41   0.000    -.3134325   -.1464842
+              Operadores de instalaciones y maquinas  |  -.2711754      .0425    -6.38   0.000    -.3546049   -.1877459
+                             Ocupaciones elementales  |  -.2278112   .0400173    -5.69   0.000    -.3063669   -.1492555
+                                                      |
+                                                 anio |
+                                                2024  |  -.0158103   .0156136    -1.01   0.312    -.0464605    .0148399
+                                                2025  |   .0213796   .0142773     1.50   0.135    -.0066473    .0494066
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0270828   .0351803    -0.77   0.442    -.0961433    .0419778
+                                                   3  |   .0063841   .0341947     0.19   0.852    -.0607417    .0735099
+                                                   4  |  -.0265903   .0364733    -0.73   0.466    -.0981891    .0450085
+                                                   5  |   -.000831   .0346698    -0.02   0.981    -.0688895    .0672274
+                                                   6  |  -.0390555   .0361107    -1.08   0.280    -.1099425    .0318314
+                                                   7  |  -.0171976   .0368299    -0.47   0.641    -.0894964    .0551012
+                                                   8  |  -.0884491   .0359162    -2.46   0.014    -.1589543   -.0179439
+                                                   9  |  -.0462598   .0345304    -1.34   0.181    -.1140446    .0215249
+                                                  10  |  -.0349394   .0369877    -0.94   0.345    -.1075479    .0376692
+                                                  11  |  -.0335013   .0379403    -0.88   0.378    -.1079799    .0409774
+                                                  12  |  -.0671321   .0353656    -1.90   0.058    -.1365565    .0022922
+                                                      |
+                                         1.tic_uso_pc |   .2698177   .0184658    14.61   0.000     .2335684    .3060669
+                                                      |
+                                             informal |
+                                     Empleo informal  |  -.1694448   .0163418   -10.37   0.000    -.2015245   -.1373651
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0830515   .0233987    -3.55   0.000    -.1289842   -.0371188
+                                                      |
+                                actividades_centradas |   .0177992   .0047789     3.72   0.000     .0084181    .0271803
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |  -.0033641   .0072807    -0.46   0.644    -.0176563    .0109282
+                                                      |
+                                                _cons |    1.59795   .0886616    18.02   0.000     1.423903    1.771997
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M2_Lineal.ster saved
+
+ ( 1)  1.tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2698177   .0184658    14.61   0.000     .2335684    .3060669
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1867661   .0197422     9.46   0.000     .1480112     .225521
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0177992   .0047789     3.72   0.000     .0084181    .0271803
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0144351   .0059065     2.44   0.015     .0028403    .0260299
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2524963   .0170626   -14.80   0.000    -.2859909   -.2190018
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0173213   .0193446     0.90   0.371     -.020653    .0552956
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =  112.64
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    6.43
+            Prob > F =    0.0017
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0504309     .00297    16.98   0.000     .0446007    .0562612
+------------------------------------------------------------------------------
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M2_Lineal.dt
+    > a saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Lineal.png saved as
+    PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Lineal.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Lineal.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(45, 771)        =     161.45
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3506
+                                                Root MSE          =     .71771
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0443165   .0031599    14.02   0.000     .0381135    .0505195
+                                experiencia_potencial |   .0109811   .0017315     6.34   0.000     .0075821      .01438
+                                         experiencia2 |  -.0001786   .0000361    -4.95   0.000    -.0002494   -.0001078
+                                              1.mujer |  -.1482524   .0132949   -11.15   0.000     -.174351   -.1221539
+                                             1.casado |   .0650976   .0165154     3.94   0.000      .032677    .0975182
+                                         1.jefe_hogar |   .1206768   .0138652     8.70   0.000     .0934587    .1478949
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .0946289     .09285     1.02   0.308    -.0876398    .2768977
+                                         Manufactura  |  -.1317633   .0628746    -2.10   0.036     -.255189   -.0083377
+                       Servicios publicos y residuos  |  -.3745493   .0995918    -3.76   0.000    -.5700526    -.179046
+                                        Construccion  |   .1185394   .0651436     1.82   0.069    -.0093405    .2464193
+                                            Comercio  |  -.3169421   .0653452    -4.85   0.000    -.4452176   -.1886666
+                    Transporte, alojamiento y comida  |  -.1564713   .0632168    -2.48   0.014    -.2805686   -.0323739
+     Informacion, finanzas y servicios empresariales  |  -.1169306   .0635308    -1.84   0.066    -.2416444    .0077833
+           Administracion publica, educacion y salud  |  -.0122306   .0639269    -0.19   0.848    -.1377221    .1132608
+                                     Otros servicios  |  -.0394887   .0660733    -0.60   0.550    -.1691936    .0902161
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .5025946   .1126491     4.46   0.000     .2814593    .7237299
+           Profesionales cientificos e intelectuales  |   .1654639    .041412     4.00   0.000     .0841702    .2467575
+             Tecnicos y profesionales de nivel medio  |   .0645645   .0391289     1.65   0.099    -.0122473    .1413764
+                    Personal de apoyo administrativo  |  -.0071606   .0391102    -0.18   0.855    -.0839356    .0696145
+              Trabajadores de servicios y vendedores  |  -.2883368   .0412239    -6.99   0.000    -.3692612   -.2074124
+Agricultores y trabajadores agropecuarios califica..  |  -.5190804    .175181    -2.96   0.003    -.8629688   -.1751921
+                    Oficiales, operarios y artesanos  |  -.2092127   .0430456    -4.86   0.000    -.2937132   -.1247122
+              Operadores de instalaciones y maquinas  |  -.2454203   .0428273    -5.73   0.000    -.3294922   -.1613483
+                             Ocupaciones elementales  |  -.2171934   .0405911    -5.35   0.000    -.2968756   -.1375111
+                                                      |
+                                                 anio |
+                                                2024  |  -.0135201   .0155873    -0.87   0.386    -.0441186    .0170784
+                                                2025  |   .0196909   .0142168     1.39   0.166    -.0082173    .0475991
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0248547   .0351244    -0.71   0.479    -.0938056    .0440961
+                                                   3  |   .0066594   .0340537     0.20   0.845    -.0601896    .0735084
+                                                   4  |  -.0238864   .0364165    -0.66   0.512    -.0953737    .0476009
+                                                   5  |  -.0015148   .0343903    -0.04   0.965    -.0690246     .065995
+                                                   6  |  -.0342972   .0357275    -0.96   0.337    -.1044319    .0358375
+                                                   7  |  -.0154449   .0367346    -0.42   0.674    -.0875566    .0566668
+                                                   8  |  -.0782657   .0354609    -2.21   0.028    -.1478772   -.0086543
+                                                   9  |  -.0410529   .0343048    -1.20   0.232    -.1083948     .026289
+                                                  10  |  -.0318209   .0368428    -0.86   0.388    -.1041451    .0405033
+                                                  11  |  -.0310485   .0377844    -0.82   0.411     -.105221    .0431241
+                                                  12  |  -.0615416   .0351354    -1.75   0.080     -.130514    .0074307
+                                                      |
+                                         1.tic_uso_pc |   .2293588   .0207268    11.07   0.000     .1886712    .2700464
+                                                      |
+                                             informal |
+                                     Empleo informal  |  -.1716594    .016643   -10.31   0.000    -.2043304   -.1389884
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0411879   .0258153    -1.60   0.111    -.0918645    .0094886
+                                                      |
+                                actividades_centradas |   .0123859   .0049123     2.52   0.012     .0027429    .0220289
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |   .0024289   .0073825     0.33   0.742    -.0120633    .0169212
+                                                      |
+                                             __00000X |   .0367818   .0111274     3.31   0.001     .0149383    .0586253
+                                             __00000Y |   .0243703   .0066716     3.65   0.000     .0112736     .037467
+                                             __00000Z |  -.0069709   .0024413    -2.86   0.004    -.0117633   -.0021784
+                                                _cons |   1.656401   .0909427    18.21   0.000     1.477877    1.834926
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __00000X = 0
+ ( 2)  __00000Y = 0
+ ( 3)  __00000Z = 0
+
+       F(  3,   771) =    9.24
+            Prob > F =    0.0000
+
+MODELO: M2_Cuadratica
+
+Linear regression                               Number of obs     =     18,065
+                                                F(43, 771)        =     163.57
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3538
+                                                Root MSE          =     .71589
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |  -.0403869   .0112226    -3.60   0.000    -.0624175   -.0183564
+                                experiencia_potencial |   .0146168   .0016534     8.84   0.000     .0113711    .0178624
+                                         experiencia2 |   -.000269   .0000342    -7.87   0.000    -.0003362   -.0002019
+                                              1.mujer |  -.1774854   .0124428   -14.26   0.000    -.2019112   -.1530596
+                                             1.casado |   .0767755   .0157728     4.87   0.000     .0458127    .1077383
+                                         1.jefe_hogar |   .1365805   .0131753    10.37   0.000     .1107167    .1624443
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1257626   .0925804     1.36   0.175    -.0559771    .3075022
+                                         Manufactura  |  -.1325489   .0654475    -2.03   0.043    -.2610252   -.0040725
+                       Servicios publicos y residuos  |  -.4353423   .0997989    -4.36   0.000    -.6312521   -.2394325
+                                        Construccion  |   .1300776   .0675561     1.93   0.055    -.0025381    .2626934
+                                            Comercio  |   -.339635   .0678744    -5.00   0.000    -.4728755   -.2063945
+                    Transporte, alojamiento y comida  |  -.1584633   .0656249    -2.41   0.016    -.2872881   -.0296385
+     Informacion, finanzas y servicios empresariales  |  -.1245672    .066195    -1.88   0.060     -.254511    .0053766
+           Administracion publica, educacion y salud  |  -.0052161   .0663354    -0.08   0.937    -.1354355    .1250032
+                                     Otros servicios  |  -.0322798   .0681037    -0.47   0.636    -.1659705     .101411
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .6855675   .0744836     9.20   0.000     .5393529    .8317821
+           Profesionales cientificos e intelectuales  |    .146144   .0388331     3.76   0.000      .069913    .2223751
+             Tecnicos y profesionales de nivel medio  |   .0400522    .038361     1.04   0.297    -.0352521    .1153565
+                    Personal de apoyo administrativo  |  -.0421491   .0379633    -1.11   0.267    -.1166729    .0323746
+              Trabajadores de servicios y vendedores  |  -.2947406   .0404331    -7.29   0.000    -.3741125   -.2153686
+Agricultores y trabajadores agropecuarios califica..  |  -.5853715   .1801436    -3.25   0.001    -.9390015   -.2317415
+                    Oficiales, operarios y artesanos  |   -.217809   .0421888    -5.16   0.000    -.3006275   -.1349904
+              Operadores de instalaciones y maquinas  |   -.260022    .042196    -6.16   0.000    -.3428546   -.1771894
+                             Ocupaciones elementales  |  -.2254759   .0397934    -5.67   0.000    -.3035921   -.1473596
+                                                      |
+                                                 anio |
+                                                2024  |  -.0140721   .0154805    -0.91   0.364    -.0444611    .0163169
+                                                2025  |   .0206692   .0143005     1.45   0.149    -.0074035    .0487418
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0275371   .0349262    -0.79   0.431    -.0960989    .0410246
+                                                   3  |   .0103939   .0340199     0.31   0.760    -.0563887    .0771766
+                                                   4  |  -.0259059   .0359639    -0.72   0.472    -.0965046    .0446929
+                                                   5  |   .0046194   .0345012     0.13   0.894    -.0631081    .0723468
+                                                   6  |  -.0356185    .035564    -1.00   0.317    -.1054323    .0341953
+                                                   7  |  -.0133425   .0365478    -0.37   0.715    -.0850874    .0584025
+                                                   8  |  -.0828227   .0356124    -2.33   0.020    -.1527315   -.0129139
+                                                   9  |  -.0432943   .0340792    -1.27   0.204    -.1101933    .0236047
+                                                  10  |  -.0329951   .0364931    -0.90   0.366    -.1046328    .0386426
+                                                  11  |   -.033568   .0370875    -0.91   0.366    -.1063724    .0392365
+                                                  12  |   -.060976   .0351196    -1.74   0.083    -.1299173    .0079654
+                                                      |
+                                         1.tic_uso_pc |   .2328984   .0179749    12.96   0.000     .1976128    .2681839
+                                                      |
+                                             informal |
+                                     Empleo informal  |   -.173823   .0162994   -10.66   0.000    -.2058195   -.1418265
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0628938   .0232909    -2.70   0.007    -.1086148   -.0171728
+                                                      |
+                                actividades_centradas |   .0122276   .0047193     2.59   0.010     .0029634    .0214919
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |  -.0008302   .0072105    -0.12   0.908    -.0149848    .0133244
+                                                      |
+                            c.educ_years#c.educ_years |   .0043619   .0004929     8.85   0.000     .0033942    .0053295
+                                                      |
+                                                _cons |   2.030431   .1015065    20.00   0.000      1.83117    2.229693
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M2_Cuadratica.ster saved
+
+ ( 1)  c.educ_years#c.educ_years = 0
+
+       F(  1,   771) =   78.30
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2328984   .0179749    12.96   0.000     .1976128    .2681839
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1700046   .0196601     8.65   0.000     .1314108    .2085983
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0122276   .0047193     2.59   0.010     .0029634    .0214919
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0113975   .0059164     1.93   0.054    -.0002168    .0230117
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2367168   .0170014   -13.92   0.000    -.2700913   -.2033423
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0038184   .0190476    -0.20   0.841    -.0412098    .0335729
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =   86.75
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    3.66
+            Prob > F =    0.0262
+
+ ( 1)  educ_years + 11*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0075938   .0061387     1.24   0.216    -.0044567    .0196443
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 21*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0512126   .0029099    17.60   0.000     .0455003    .0569249
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 31*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0948315    .005277    17.97   0.000     .0844724    .1051905
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + 37*c.educ_years#c.educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1210028   .0079247    15.27   0.000     .1054463    .1365593
+------------------------------------------------------------------------------
+(18,006 real changes made)
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M2_Cuadratic
+    > a.dta saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Cuadratica.png
+    saved as PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Cuadratica.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Cuadratica.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(46, 771)        =     166.53
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3560
+                                                Root MSE          =     .71472
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |  -.0394021   .0119663    -3.29   0.001    -.0628925   -.0159116
+                                experiencia_potencial |    .011136   .0017629     6.32   0.000     .0076754    .0145967
+                                         experiencia2 |  -.0001987   .0000365    -5.44   0.000    -.0002703    -.000127
+                                              1.mujer |  -.1364542   .0134839   -10.12   0.000    -.1629237   -.1099847
+                                             1.casado |   .0613894    .016149     3.80   0.000     .0296881    .0930907
+                                         1.jefe_hogar |   .1053276   .0139766     7.54   0.000     .0778909    .1327642
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1008461   .0921868     1.09   0.274    -.0801209    .2818131
+                                         Manufactura  |  -.1037028   .0646499    -1.60   0.109    -.2306135    .0232079
+                       Servicios publicos y residuos  |  -.3191932   .0994018    -3.21   0.001    -.5143234    -.124063
+                                        Construccion  |   .1322002   .0671163     1.97   0.049     .0004479    .2639526
+                                            Comercio  |  -.2609495   .0669986    -3.89   0.000    -.3924708   -.1294281
+                    Transporte, alojamiento y comida  |  -.1330387   .0648127    -2.05   0.040    -.2602689   -.0058085
+     Informacion, finanzas y servicios empresariales  |  -.0903845   .0653424    -1.38   0.167    -.2186547    .0378857
+           Administracion publica, educacion y salud  |   .0020755    .065634     0.03   0.975     -.126767    .1309181
+                                     Otros servicios  |  -.0301007   .0676616    -0.44   0.657    -.1629236    .1027221
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .4529669   .1011117     4.48   0.000       .25448    .6514538
+           Profesionales cientificos e intelectuales  |   .0868222   .0405474     2.14   0.033     .0072257    .1664187
+             Tecnicos y profesionales de nivel medio  |   .0279964   .0387537     0.72   0.470     -.048079    .1040717
+                    Personal de apoyo administrativo  |  -.0454749   .0383956    -1.18   0.237    -.1208473    .0298974
+              Trabajadores de servicios y vendedores  |  -.2782217   .0408317    -6.81   0.000    -.3583761   -.1980673
+Agricultores y trabajadores agropecuarios califica..  |  -.4968747    .178336    -2.79   0.005    -.8469563   -.1467931
+                    Oficiales, operarios y artesanos  |  -.2232076   .0425376    -5.25   0.000    -.3067109   -.1397044
+              Operadores de instalaciones y maquinas  |  -.2537561   .0423132    -6.00   0.000    -.3368188   -.1706934
+                             Ocupaciones elementales  |  -.2328686   .0401268    -5.80   0.000    -.3116394   -.1540977
+                                                      |
+                                                 anio |
+                                                2024  |  -.0105866   .0154304    -0.69   0.493    -.0408771    .0197039
+                                                2025  |   .0167484   .0142045     1.18   0.239    -.0111358    .0446326
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0234129   .0349876    -0.67   0.504    -.0920952    .0452694
+                                                   3  |   .0088173   .0339583     0.26   0.795    -.0578445     .075479
+                                                   4  |  -.0221971   .0360824    -0.62   0.539    -.0930285    .0486343
+                                                   5  |   .0020536   .0344436     0.06   0.952    -.0655608    .0696679
+                                                   6  |  -.0287086   .0353015    -0.81   0.416    -.0980071    .0405899
+                                                   7  |  -.0124327   .0366389    -0.34   0.734    -.0843565    .0594912
+                                                   8  |  -.0640399    .035085    -1.83   0.068    -.1329134    .0048335
+                                                   9  |  -.0344779     .03413    -1.01   0.313    -.1014767    .0325209
+                                                  10  |  -.0255617   .0362955    -0.70   0.481    -.0968115    .0456881
+                                                  11  |  -.0281843   .0369967    -0.76   0.446    -.1008105    .0444419
+                                                  12  |  -.0497649    .035069    -1.42   0.156     -.118607    .0190773
+                                                      |
+                                         1.tic_uso_pc |   .1991697   .0195427    10.19   0.000     .1608066    .2375329
+                                                      |
+                                             informal |
+                                     Empleo informal  |  -.1461106    .017059    -8.57   0.000    -.1795982    -.112623
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0504903   .0252756    -2.00   0.046    -.1001075   -.0008731
+                                                      |
+                                actividades_centradas |    .008483   .0047841     1.77   0.077    -.0009084    .0178743
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |    .003082   .0072753     0.42   0.672    -.0111997    .0173638
+                                                      |
+                            c.educ_years#c.educ_years |   .0037937   .0005394     7.03   0.000     .0027348    .0048525
+                                                      |
+                                             __000015 |   .0126228   .0104834     1.20   0.229    -.0079565    .0332021
+                                             __000016 |   .0487895   .0082863     5.89   0.000     .0325232    .0650559
+                                             __000017 |  -.0125001    .002563    -4.88   0.000    -.0175314   -.0074688
+                                                _cons |   2.099699   .1050592    19.99   0.000     1.893463    2.305935
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __000015 = 0
+ ( 2)  __000016 = 0
+ ( 3)  __000017 = 0
+
+       F(  3,   771) =   13.00
+            Prob > F =    0.0000
+
+MODELO: M2_Tramos
+
+Linear regression                               Number of obs     =     18,065
+                                                F(45, 771)        =     166.09
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3543
+                                                Root MSE          =     .71565
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0292065   .0159945     1.83   0.068    -.0021915    .0606045
+                                experiencia_potencial |   .0136659   .0016516     8.27   0.000     .0104238     .016908
+                                         experiencia2 |  -.0002478   .0000343    -7.24   0.000    -.0003151   -.0001806
+                                              1.mujer |  -.1750007    .012403   -14.11   0.000    -.1993484    -.150653
+                                             1.casado |   .0743339   .0158139     4.70   0.000     .0432905    .1053774
+                                         1.jefe_hogar |    .134436   .0131361    10.23   0.000     .1086492    .1602227
+                                                      |
+                                             sector10 |
+                                             Mineria  |   .1145171   .0920638     1.24   0.214    -.0662084    .2952425
+                                         Manufactura  |  -.1356405    .065923    -2.06   0.040    -.2650503   -.0062308
+                       Servicios publicos y residuos  |  -.4316078   .0998251    -4.32   0.000    -.6275691   -.2356465
+                                        Construccion  |   .1266891     .06783     1.87   0.062    -.0064643    .2598424
+                                            Comercio  |  -.3430482   .0683237    -5.02   0.000    -.4771708   -.2089256
+                    Transporte, alojamiento y comida  |  -.1633473   .0661392    -2.47   0.014    -.2931814   -.0335131
+     Informacion, finanzas y servicios empresariales  |  -.1269006   .0666206    -1.90   0.057    -.2576799    .0038787
+           Administracion publica, educacion y salud  |  -.0170341   .0668036    -0.25   0.799    -.1481726    .1141044
+                                     Otros servicios  |   -.037808   .0686222    -0.55   0.582    -.1725166    .0969006
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .6604187   .0730253     9.04   0.000     .5170667    .8037708
+           Profesionales cientificos e intelectuales  |   .1476747   .0388462     3.80   0.000     .0714179    .2239316
+             Tecnicos y profesionales de nivel medio  |   .0369877   .0383632     0.96   0.335     -.038321    .1122964
+                    Personal de apoyo administrativo  |  -.0458785   .0380743    -1.20   0.229      -.12062     .028863
+              Trabajadores de servicios y vendedores  |  -.3099706   .0405483    -7.64   0.000    -.3895687   -.2303724
+Agricultores y trabajadores agropecuarios califica..  |  -.5953019   .1793657    -3.32   0.001    -.9474049   -.2431989
+                    Oficiales, operarios y artesanos  |  -.2358667   .0422481    -5.58   0.000    -.3188017   -.1529317
+              Operadores de instalaciones y maquinas  |  -.2737085    .042244    -6.48   0.000    -.3566353   -.1907816
+                             Ocupaciones elementales  |  -.2418467   .0399635    -6.05   0.000    -.3202968   -.1633965
+                                                      |
+                                                 anio |
+                                                2024  |  -.0135667   .0154621    -0.88   0.381    -.0439195    .0167861
+                                                2025  |   .0218307    .014266     1.53   0.126    -.0061742    .0498355
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0254662   .0348407    -0.73   0.465    -.0938601    .0429277
+                                                   3  |   .0114384   .0337524     0.34   0.735    -.0548191    .0776959
+                                                   4  |  -.0248277   .0357945    -0.69   0.488    -.0950939    .0454386
+                                                   5  |   .0070145   .0342779     0.20   0.838    -.0602746    .0743036
+                                                   6  |  -.0351348   .0352631    -1.00   0.319    -.1043579    .0340884
+                                                   7  |  -.0131561   .0363135    -0.36   0.717    -.0844412     .058129
+                                                   8  |  -.0826223   .0355903    -2.32   0.021    -.1524876   -.0127569
+                                                   9  |  -.0416284   .0338031    -1.23   0.219    -.1079854    .0247285
+                                                  10  |  -.0340165    .036446    -0.93   0.351    -.1055617    .0375287
+                                                  11  |  -.0333677   .0369776    -0.90   0.367    -.1059564     .039221
+                                                  12  |  -.0614152   .0349999    -1.75   0.080    -.1301215    .0072911
+                                                      |
+                                         1.tic_uso_pc |   .2356433   .0181397    12.99   0.000     .2000342    .2712523
+                                                      |
+                                             informal |
+                                     Empleo informal  |  -.1776477   .0162333   -10.94   0.000    -.2095144    -.145781
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0596094   .0232753    -2.56   0.011    -.1052998    -.013919
+                                                      |
+                                actividades_centradas |   .0121153   .0046958     2.58   0.010     .0028971    .0213334
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |  -.0000785   .0072067    -0.01   0.991    -.0142256    .0140686
+                                                      |
+                                                 e_h6 |  -.0024172   .0195703    -0.12   0.902    -.0408345    .0360001
+                                                e_h11 |   .0397548   .0077871     5.11   0.000     .0244684    .0550413
+                                                e_h16 |   .1263922   .0170391     7.42   0.000     .0929436    .1598409
+                                                _cons |   1.831224   .1183342    15.48   0.000     1.598928    2.063519
+-----------------------------------------------------------------------------------------------------------------------
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/M2_Tramos.ster saved
+
+ ( 1)  e_h6 = 0
+ ( 2)  e_h11 = 0
+ ( 3)  e_h16 = 0
+
+       F(  3,   771) =   38.58
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .2356433   .0181397    12.99   0.000     .2000342    .2712523
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1760339   .0197221     8.93   0.000     .1373186    .2147492
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0121153   .0046958     2.58   0.010     .0028971    .0213334
+------------------------------------------------------------------------------
+
+ ( 1)  actividades_centradas + 1.informal#c.actividades_centradas = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0120368   .0059187     2.03   0.042     .0004181    .0236555
+------------------------------------------------------------------------------
+
+ ( 1)  1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.2372571    .017015   -13.94   0.000    -.2706583    -.203856
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc + 1.informal + 1.tic_uso_pc#1.informal = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |  -.0016138   .0191607    -0.08   0.933    -.0392272    .0359995
+------------------------------------------------------------------------------
+
+ ( 1)  1.tic_uso_pc = 0
+ ( 2)  actividades_centradas = 0
+
+       F(  2,   771) =   87.07
+            Prob > F =    0.0000
+
+ ( 1)  1.tic_uso_pc#1.informal = 0
+ ( 2)  1.informal#c.actividades_centradas = 0
+
+       F(  2,   771) =    3.28
+            Prob > F =    0.0381
+
+ ( 1)  educ_years = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0292065   .0159945     1.83   0.068    -.0021915    .0606045
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0267893    .006217     4.31   0.000      .014585    .0389936
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 + e_h11 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0665441   .0040857    16.29   0.000     .0585237    .0745645
+------------------------------------------------------------------------------
+
+ ( 1)  educ_years + e_h6 + e_h11 + e_h16 = 0
+
+------------------------------------------------------------------------------
+ln_ing_hor~5 | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1929363   .0162979    11.84   0.000     .1609428    .2249298
+------------------------------------------------------------------------------
+(16,947 real changes made)
+file
+    $ENAHO_SALIDA/Forma_funcional_etapa08C/componente_educacion_M2_Tramos.dt
+    > a saved
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Tramos.png saved as
+    PNG format
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Tramos.gph not
+    found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/educacion_M2_Tramos.gph saved
+
+Linear regression                               Number of obs     =     18,065
+                                                F(48, 771)        =     163.90
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3559
+                                                Root MSE          =     .71481
+
+                                                         (Std. err. adjusted for 772 clusters in id_conglomerado_marco)
+-----------------------------------------------------------------------------------------------------------------------
+                                                      |               Robust
+                                 ln_ing_hora_real2025 | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+------------------------------------------------------+----------------------------------------------------------------
+                                           educ_years |   .0052245   .0165432     0.32   0.752    -.0272506    .0376995
+                                experiencia_potencial |   .0111399    .001738     6.41   0.000     .0077282    .0145516
+                                         experiencia2 |  -.0001966   .0000361    -5.44   0.000    -.0002675   -.0001257
+                                              1.mujer |  -.1443824   .0134308   -10.75   0.000    -.1707476   -.1180172
+                                             1.casado |    .065446    .016146     4.05   0.000     .0337507    .0971414
+                                         1.jefe_hogar |   .1113069   .0139169     8.00   0.000     .0839873    .1386265
+                                                      |
+                                             sector10 |
+                                             Mineria  |    .116667   .0929347     1.26   0.210    -.0657681     .299102
+                                         Manufactura  |   -.109883   .0656633    -1.67   0.095     -.238783     .019017
+                       Servicios publicos y residuos  |  -.3309147   .0997332    -3.32   0.001    -.5266956   -.1351339
+                                        Construccion  |   .1311664    .067868     1.93   0.054    -.0020616    .2643943
+                                            Comercio  |  -.2756714   .0680132    -4.05   0.000    -.4091844   -.1421584
+                    Transporte, alojamiento y comida  |  -.1412683   .0658698    -2.14   0.032    -.2705737    -.011963
+     Informacion, finanzas y servicios empresariales  |  -.0995298   .0662794    -1.50   0.134    -.2296392    .0305797
+           Administracion publica, educacion y salud  |  -.0047975   .0666393    -0.07   0.943    -.1356134    .1260184
+                                     Otros servicios  |  -.0354723   .0685711    -0.52   0.605    -.1700805    .0991358
+                                                      |
+                                    ocupacion10_final |
+                               Directores y gerentes  |   .5857687   .1004384     5.83   0.000     .3886034    .7829339
+           Profesionales cientificos e intelectuales  |   .1105892    .040195     2.75   0.006     .0316847    .1894938
+             Tecnicos y profesionales de nivel medio  |   .0243174   .0385078     0.63   0.528    -.0512751    .0999099
+                    Personal de apoyo administrativo  |  -.0536653   .0382912    -1.40   0.161    -.1288326     .021502
+              Trabajadores de servicios y vendedores  |  -.2930096   .0408196    -7.18   0.000    -.3731403    -.212879
+Agricultores y trabajadores agropecuarios califica..  |  -.5146866   .1757806    -2.93   0.004    -.8597519   -.1696212
+                    Oficiales, operarios y artesanos  |  -.2435302   .0425452    -5.72   0.000    -.3270484   -.1600121
+              Operadores de instalaciones y maquinas  |  -.2726168   .0422538    -6.45   0.000    -.3555629   -.1896707
+                             Ocupaciones elementales  |  -.2483381     .04004    -6.20   0.000    -.3269384   -.1697378
+                                                      |
+                                                 anio |
+                                                2024  |  -.0110191   .0154411    -0.71   0.476    -.0413306    .0192925
+                                                2025  |   .0186157   .0142129     1.31   0.191    -.0092849    .0465163
+                                                      |
+                                              mes_num |
+                                                   2  |  -.0234404    .034967    -0.67   0.503    -.0920821    .0452013
+                                                   3  |   .0092138   .0337737     0.27   0.785    -.0570855    .0755131
+                                                   4  |  -.0231494    .036006    -0.64   0.520    -.0938308     .047532
+                                                   5  |   .0039147   .0343444     0.11   0.909    -.0635049    .0713344
+                                                   6  |  -.0302637   .0351484    -0.86   0.389    -.0992616    .0387341
+                                                   7  |  -.0125154   .0365199    -0.34   0.732    -.0842056    .0591748
+                                                   8  |  -.0682945   .0352532    -1.94   0.053     -.137498    .0009091
+                                                   9  |  -.0353484   .0339832    -1.04   0.299    -.1020589    .0313621
+                                                  10  |  -.0283023   .0363918    -0.78   0.437     -.099741    .0431364
+                                                  11  |  -.0290422   .0369433    -0.79   0.432    -.1015635    .0434792
+                                                  12  |  -.0523497   .0350342    -1.49   0.136    -.1211234    .0164241
+                                                      |
+                                         1.tic_uso_pc |   .2152254   .0200799    10.72   0.000     .1758077    .2546431
+                                                      |
+                                             informal |
+                                     Empleo informal  |  -.1484742    .016898    -8.79   0.000    -.1816457   -.1153027
+                                                      |
+                                  tic_uso_pc#informal |
+                                   1#Empleo informal  |  -.0644454   .0254349    -2.53   0.011    -.1143753   -.0145156
+                                                      |
+                                actividades_centradas |   .0101371   .0047781     2.12   0.034     .0007576    .0195166
+                                                      |
+                     informal#c.actividades_centradas |
+                                     Empleo informal  |    .001652    .007279     0.23   0.821    -.0126371    .0159411
+                                                      |
+                                                 e_h6 |   .0142287   .0197631     0.72   0.472    -.0245671    .0530245
+                                                e_h11 |   .0403093   .0077465     5.20   0.000     .0251026     .055516
+                                                e_h16 |   .0938322   .0235385     3.99   0.000     .0476251    .1400393
+                                             __00001D |  -.0004125   .0100368    -0.04   0.967    -.0201152    .0192902
+                                             __00001E |   .0399087   .0081178     4.92   0.000      .023973    .0558443
+                                             __00001F |  -.0103774   .0022102    -4.70   0.000    -.0147161   -.0060387
+                                                _cons |   2.013613   .1239173    16.25   0.000     1.770358    2.256869
+-----------------------------------------------------------------------------------------------------------------------
+
+ ( 1)  __00001D = 0
+ ( 2)  __00001E = 0
+ ( 3)  __00001F = 0
+
+       F(  3,   771) =    8.44
+            Prob > F =    0.0000
+
+. postclose `HT'
+
+. postclose `HX'
+
+. postclose `HE'
+
+. postclose `HC'
+
+. 
+. foreach archivo in pruebas_forma_educacion contrastes_TIC_educacion cambios_educacion coeficientes_forma_educacion {
+  2.     preserve
+  3.     use "`resultados'/`archivo'.dta", clear
+  4.     export delimited using "`resultados'/`archivo'.csv", replace
+  5.     if "`archivo'" != "coeficientes_forma_educacion" list, sepby(modelo) noobs
+  6.     restore
+  7. }
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/pruebas_forma_educacion.csv saved
+
+  +-------------------------------------------------------------------------------------------------------------------+
+  |        modelo                               prueba           F   gl1   gl2          p       N         r2   grupos |
+  |-------------------------------------------------------------------------------------------------------------------|
+  |     M1_Lineal          RESET: potencias del ajuste   14.670799     3   771   2.67e-09   18065    .328178      772 |
+  |-------------------------------------------------------------------------------------------------------------------|
+  | M1_Cuadratica                Educacion al cuadrado    131.6301     1   771   3.04e-28   18065   .3360899      772 |
+  | M1_Cuadratica          RESET: potencias del ajuste    15.41869     3   771   9.48e-10   18065   .3360899      772 |
+  |-------------------------------------------------------------------------------------------------------------------|
+  |     M1_Tramos   Cambios de pendiente conjuntamente   55.877962     3   771   1.09e-32   18065   .3361448      772 |
+  |     M1_Tramos          RESET: potencias del ajuste   10.931056     3   771   4.90e-07   18065   .3361448      772 |
+  |-------------------------------------------------------------------------------------------------------------------|
+  |     M2_Lineal            Bloque TIC entre formales   112.63736     2   771          0   18065   .3493003      772 |
+  |     M2_Lineal     Interacciones TIC e informalidad   6.4250347     2   771   .0017086   18065   .3493003      772 |
+  |     M2_Lineal          RESET: potencias del ajuste   9.2397691     3   771   5.22e-06   18065   .3493003      772 |
+  |-------------------------------------------------------------------------------------------------------------------|
+  | M2_Cuadratica                Educacion al cuadrado    78.30432     1   771   5.97e-18   18065   .3538124      772 |
+  | M2_Cuadratica            Bloque TIC entre formales   86.754482     2   771   1.04e-34   18065   .3538124      772 |
+  | M2_Cuadratica     Interacciones TIC e informalidad   3.6574417     2   771   .0262471   18065   .3538124      772 |
+  | M2_Cuadratica          RESET: potencias del ajuste   13.003996     3   771   2.72e-08   18065   .3538124      772 |
+  |-------------------------------------------------------------------------------------------------------------------|
+  |     M2_Tramos   Cambios de pendiente conjuntamente   38.580349     3   771   3.10e-23   18065   .3543293      772 |
+  |     M2_Tramos            Bloque TIC entre formales   87.073991     2   771   8.02e-35   18065   .3543293      772 |
+  |     M2_Tramos     Interacciones TIC e informalidad   3.2804474     2   771   .0381371   18065   .3543293      772 |
+  |     M2_Tramos          RESET: potencias del ajuste   8.4354976     3   771   .0000161   18065   .3543293      772 |
+  +-------------------------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/contrastes_TIC_educacion.csv saved
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal |                    Uso_formal |  .26981767 | .0184658 |        0 |  .2335684 |  .3060669 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         30.97256         |          26.30993         |          35.80732         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal |                  Uso_informal |  .18676614 | .0197422 | 3.62e-20 |  .1480113 |   .225521 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         20.53454         |          15.95259         |          25.29754         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal |             Intensidad_formal |  .01779918 | .0047789 | .0002099 |  .0084181 |  .0271803 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.795852         |          .8453605         |          2.755303         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal |           Intensidad_informal |  .01443512 | .0059065 | .0147515 |  .0028403 |  .0260299 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |          1.45398         |          .2844374         |          2.637163         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal |               Brecha_usuarios | -.25249634 | .0170626 |        0 | -.2859909 | -.2190018 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |        -22.31409         |         -24.87306         |         -19.66797         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Lineal | Informal_usuario_vs_formal_no |  .01732134 | .0193446 | .3708473 |  -.020653 |  .0552956 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.747222         |         -2.044115         |          5.685301         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica |                    Uso_formal |  .23289837 | .0179749 | 7.04e-35 |  .1976128 |  .2681839 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         26.22532         |          21.84905         |          30.75876         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica |                  Uso_informal |  .17000457 | .0196601 | 3.04e-17 |  .1314108 |  .2085983 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         18.53103         |          14.04362         |            23.195         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica |             Intensidad_formal |  .01222763 | .0047193 | .0097514 |  .0029634 |  .0214919 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.230269         |          .2967781         |          2.172448         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica |           Intensidad_informal |  .01139745 | .0059164 | .0544216 | -.0002168 |  .0230117 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.146265         |         -.0216783         |          2.327852         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica |               Brecha_usuarios | -.23671681 | .0170014 |        0 | -.2700913 | -.2033423 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |        -21.07852         |         -23.66902         |         -18.40011         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  | M2_Cuadratica | Informal_usuario_vs_formal_no | -.00381844 | .0190476 | .8411673 | -.0412098 |  .0335729 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |        -.3811161         |         -4.037222         |          3.414284         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos |                    Uso_formal |  .23564328 | .0181397 | 4.91e-35 |  .2000342 |  .2712523 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         26.57227         |          22.14446         |           31.1606         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos |                  Uso_informal |  .17603389 | .0197221 | 3.19e-18 |  .1373186 |  .2147492 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         19.24785         |          14.71936         |           23.9551         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos |             Intensidad_formal |  .01211529 | .0046958 | .0100638 |  .0028971 |  .0213334 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.218898         |          .2901348         |          2.156262         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos |           Intensidad_informal |  .01203681 | .0059187 | .0423251 |  .0004181 |  .0236555 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |         1.210954         |          .0418195         |          2.393752         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos |               Brecha_usuarios | -.23725711 |  .017015 |        0 | -.2706583 |  -.203856 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |        -21.12115         |         -23.71228         |         -18.44202         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+
+  +----------------------------------------------------------------------------------------------------------+
+  |        modelo |                     contraste |          b |       se |        p |        li |        ls |
+  |     M2_Tramos | Informal_usuario_vs_formal_no | -.00161382 | .0191607 | .9328988 | -.0392272 |  .0359995 |
+  |----------------------------------------------------------------------------------+-----------------------|
+  |              pct         |            pct_li         |            pct_ls         |             N         |
+  |        -.1612523         |         -3.846774         |          3.665535         |         18065         |
+  +----------------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/cambios_educacion.csv saved
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Lineal |     5 |     6 | .06653986 | .0030643 |        0 |  .0605245 | .0725552 | 6.880356 |  6.239364 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   7.525216                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Lineal |    10 |    11 | .06653986 | .0030643 |        0 |  .0605245 | .0725552 | 6.880356 |  6.239364 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   7.525216                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Lineal |    15 |    16 | .06653986 | .0030643 |        0 |  .0605245 | .0725552 | 6.880356 |  6.239364 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   7.525216                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Lineal |    18 |    19 | .06653986 | .0030643 |        0 |  .0605245 | .0725552 | 6.880356 |  6.239364 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   7.525216                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M1_Cuadratica |     5 |     6 | .00918381 | .0061588 | .1363252 | -.0029062 | .0212738 | .9226113 | -.2901947 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   2.150169                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M1_Cuadratica |    10 |    11 | .06572161 | .0029643 |        0 |  .0599025 | .0715407 | 6.792937 |  6.173303 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   7.416188                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M1_Cuadratica |    15 |    16 |  .1222594 | .0053115 |        0 |  .1118327 | .1326861 | 13.00472 |  11.83257 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   14.18915                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M1_Cuadratica |    18 |    19 | .15618208 | .0079486 |        0 |  .1405787 | .1717855 |  16.9039 |  15.09396 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   18.74231                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Tramos |     5 |     6 | .02651942 | .0159908 |   .09764 | -.0048713 | .0579101 | 2.687419 | -.4859407 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.961973                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Tramos |    10 |    11 | .03456204 |  .006294 | 5.42e-08 |  .0222067 | .0469174 | 3.516625 |  2.245513 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                    4.80354                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Tramos |    15 |    16 | .09121527 | .0041694 |        0 |  .0830306 | .0993999 | 9.550482 |  8.657507 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   10.45079                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M1_Tramos |    18 |    19 | .21308404 | .0163514 | 3.16e-35 |  .1809855 | .2451826 | 23.74887 |  19.83978 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   27.78546                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Lineal |     5 |     6 | .05043095 |   .00297 |        0 |  .0446007 | .0562612 | 5.172424 |  4.561026 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.787396                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Lineal |    10 |    11 | .05043095 |   .00297 |        0 |  .0446007 | .0562612 | 5.172424 |  4.561026 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.787396                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Lineal |    15 |    16 | .05043095 |   .00297 |        0 |  .0446007 | .0562612 | 5.172424 |  4.561026 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.787396                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Lineal |    18 |    19 | .05043095 |   .00297 |        0 |  .0446007 | .0562612 | 5.172424 |  4.561026 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.787396                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M2_Cuadratica |     5 |     6 | .00759378 | .0061387 | .2164485 | -.0044567 | .0196443 | .7622684 | -.4446781 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   1.983847                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M2_Cuadratica |    10 |    11 | .05121262 | .0029099 |        0 |  .0455003 | .0569249 | 5.254666 |  4.655135 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   5.857632                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M2_Cuadratica |    15 |    16 | .09483146 |  .005277 |        0 |  .0844724 | .1051905 | 9.947354 |  8.814281 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   11.09223                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  | M2_Cuadratica |    18 |    19 | .12100277 | .0079247 |        0 |  .1054463 | .1365593 |  12.8628 |  11.12064 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   14.63228                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Tramos |     5 |     6 |  .0292065 | .0159945 |  .068232 | -.0021915 | .0606045 | 2.963719 | -.2189061 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   6.247857                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Tramos |    10 |    11 | .02678928 |  .006217 | .0000185 |   .014585 | .0389936 | 2.715134 |  1.469187 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                    3.97638                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Tramos |    15 |    16 | .06654409 | .0040857 |        0 |  .0585237 | .0745645 | 6.880809 |  6.027013 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                    7.74148                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+
+  +---------------------------------------------------------------------------------------------------------------+
+  |        modelo | desde | hasta |         b |       se |        p |        li |       ls |      pct |    pct_li |
+  |     M2_Tramos |    18 |    19 | .19293633 | .0162979 | 7.96e-30 |  .1609428 | .2249298 | 21.28056 |  17.46178 |
+  |---------------------------------------------------------------------------------------------------------------|
+  |                                                     pct_ls                                                    |
+  |                                                   25.22348                                                    |
+  +---------------------------------------------------------------------------------------------------------------+
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/coeficientes_forma_educacion.csv s
+> aved
+
+. 
+. * FIGURA 5: margen extensivo bajo las tres formas educativas.
+. * Se dibujan los contrastes y los IC del 95% estimados arriba.
+. local carpeta "`resultados'"
+
+. local archivo "`resultados'/contrastes_TIC_educacion.dta"
+
+. confirm file "`archivo'"
+
+. 
+. preserve
+
+. use "`archivo'", clear
+
+. 
+. * 1. Seleccionar los dos contrastes de uso y las tres formas educativas.
+. keep if inlist(modelo, "M2_Lineal", "M2_Cuadratica", "M2_Tramos")
+(0 observations deleted)
+
+. keep if inlist(contraste, "Uso_formal", "Uso_informal")
+(12 observations deleted)
+
+. 
+. assert _N == 6
+
+. isid modelo contraste
+
+. assert N == 18065
+
+. assert !missing(pct, pct_li, pct_ls)
+
+. assert pct_li <= pct & pct <= pct_ls
+
+. 
+. * Los porcentajes y sus intervalos ya fueron calculados en la etapa 08C.
+. * Comprobar su correspondencia con los contrastes en log puntos.
+. * Se admite una pequena tolerancia por la precision de almacenamiento.
+. assert abs(pct - 100 * (exp(b) - 1)) < 1e-4
+
+. assert abs(pct_li - 100 * (exp(li) - 1)) < 1e-4
+
+. assert abs(pct_ls - 100 * (exp(ls) - 1)) < 1e-4
+
+. 
+. generate byte fig5_orden = .
+(6 missing values generated)
+
+. replace fig5_orden = 1 if modelo == "M2_Lineal"
+(2 real changes made)
+
+. replace fig5_orden = 2 if modelo == "M2_Cuadratica"
+(2 real changes made)
+
+. replace fig5_orden = 3 if modelo == "M2_Tramos"
+(2 real changes made)
+
+. 
+. generate str12 fig5_etiqueta = strtrim(string(pct, "%6.2f")) + "%"
+
+. 
+. capture graph set window fontface "Times New Roman"
+
+. 
+. * 2. Construir los paneles con las mismas escalas.
+. foreach grupo in formal informal {
+  2. 
+.     if "`grupo'" == "formal" {
+  3.         local titulo "Trabajadores formales"
+  4.         local color "32 78 115"
+  5.     }
+  6.     else {
+  7.         local titulo "Trabajadores informales"
+  8.         local color "151 59 66"
+  9.     }
+ 10. 
+.     twoway ///
+>         (rcap pct_li pct_ls fig5_orden ///
+>             if contraste == "Uso_`grupo'", ///
+>             horizontal lcolor("`color'") lwidth(medium)) ///
+>         (scatter fig5_orden pct ///
+>             if contraste == "Uso_`grupo'", ///
+>             msymbol(O) mcolor("`color'") msize(medium) ///
+>             mlabel(fig5_etiqueta) mlabposition(6) ///
+>             mlabcolor(black) mlabsize(small)), ///
+>         title("`titulo'", size(medium) color(black)) ///
+>         ylabel(1 "Lineal" 2 "Cuadrática" 3 "Por tramos", ///
+>             angle(horizontal) labsize(medsmall) nogrid) ///
+>         yscale(reverse range(0.5 3.5)) ///
+>         ytitle("") ///
+>         xlabel(10(5)40, grid glcolor(gs15) labsize(small)) ///
+>         xscale(range(10 40)) ///
+>         xtitle("Diferencia porcentual e IC del 95%", size(small)) ///
+>         legend(off) ///
+>         graphregion(color(white)) ///
+>         plotregion(color(white)) ///
+>         scheme(s2color) ///
+>         name(fig5_`grupo', replace)
+ 11. }
+
+. 
+. * 3. Unir los paneles y guardar la figura en PNG y en formato de Stata.
+. graph combine fig5_formal fig5_informal, ///
+>     cols(2) xcommon ycommon imargin(small) ///
+>     title("Asociación del uso de computadora según la forma educativa", ///
+>         size(medium) color(black)) ///
+>     note("Usuario con el número promedio de actividades frente a no usuario del mismo grupo." ///
+>          "N = 18 065 en cada modelo. Errores estándar agrupados por 772 grupos del marco.", ///
+>          size(small) color(black)) ///
+>     graphregion(color(white)) ///
+>     xsize(12) ysize(6) ///
+>     name(figura5_educacion, replace)
+
+. 
+. graph export "`carpeta'/05_Sensibilidad_educacion.png", ///
+>     name(figura5_educacion) width(3000) replace
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/05_Sensibilidad_educacion.png
+    not found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/05_Sensibilidad_educacion.png
+    saved as PNG format
+
+. 
+. graph save figura5_educacion ///
+>     "`carpeta'/05_Sensibilidad_educacion.gph", replace
+(file $ENAHO_SALIDA/Forma_funcional_etapa08C/05_Sensibilidad_educacion.gph
+    not found)
+file $ENAHO_SALIDA/Forma_funcional_etapa08C/05_Sensibilidad_educacion.gph save
+> d
+
+. 
+. restore
+
+. graph display figura5_educacion
+
+. 
+. display "Figura guardada en: `carpeta'"
+Figura guardada en: $ENAHO_SALIDA/Forma_funcional_etapa08C
+
+. 
+. assert _N == `n_base'
+
+. isid id_observacion
+
+. estimates restore M2_Lineal
+(results M2_Lineal are active now)
+
+. display _newline "ETAPA 08C TERMINADA"
+
+ETAPA 08C TERMINADA
+
+. display "Se compararon seis modelos sobre las mismas 18065 observaciones."
+Se compararon seis modelos sobre las mismas 18065 observaciones.
+
+. display "No se sustituyo automaticamente la especificacion principal."
+No se sustituyo automaticamente la especificacion principal.
+
+. display "Se guardaron seis graficos de componente educativo y la figura 5, en PNG y GPH."
+Se guardaron seis graficos de componente educativo y la figura 5, en PNG y GPH.
+
+. display "Graficos y resultados en: `resultados'"
+Graficos y resultados en: $ENAHO_SALIDA/Forma_funcional_etapa08C
+
+. log close forma08c
+      name:  forma08c
+       log:  $ENAHO_SALIDA/Forma_funcional_etapa08C/08C_Forma_funcional.log
+  log type:  text
+ closed on:  15 Oct 2026, 07:26:13
+------------------------------------------------------------------------------------------------------------------------

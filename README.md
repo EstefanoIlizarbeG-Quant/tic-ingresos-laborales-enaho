@@ -8,12 +8,14 @@ El proyecto reúne construcción y validación de datos, estimaciones MCO con er
 
 ## Estado de publicación
 
-Esta primera entrega contiene el código y la documentación. Las tablas agregadas y los logs revisados se incorporarán en el segundo bloque; las figuras, en el tercero.
+Ya están disponibles el código, la documentación, 27 tablas agregadas y cinco logs revisados. Las figuras se incorporarán en el tercer bloque.
 
 | Carpeta o archivo disponible | Contenido |
 |---|---|
 | `stata/` | Configuración, master y programas de estimación y diagnóstico. |
 | `python/` | Programa de reconstrucción de figuras. |
+| `resultados/tablas/` | 27 tablas agregadas exportadas de Stata. |
+| `resultados/logs/` | Cinco registros históricos con rutas locales sustituidas y listados individuales omitidos cuando corresponde. |
 | `docs/` | Reproducción, alcance y trazabilidad. |
 | `datos/README.md` | Entradas y tratamiento de los datos locales. |
 | `requirements.txt` | Dependencias de Python. |
@@ -26,6 +28,20 @@ Esta primera entrega contiene el código y la documentación. Las tablas agregad
 - Heckman-Mincer principal: **28 363 observaciones**, con **18 069 seleccionadas**. Se documenta por separado de la muestra TIC.
 
 Las comparaciones se interpretan como **asociaciones condicionales**. Los descriptivos sin ponderación describen la muestra analizada.
+
+## Resultados disponibles
+
+| Análisis | Tablas |
+|---|---:|
+| [Sensibilidad de MCO](resultados/tablas/07_sensibilidad/) | 3 |
+| [Diagnósticos de MCO](resultados/tablas/08B_diagnosticos/) | 3 |
+| [Forma funcional de la educación](resultados/tablas/08C_educacion/) | 4 |
+| [Asociaciones y brechas TIC](resultados/tablas/08D_TIC/) | 3 |
+| [Tipo de trabajador](resultados/tablas/08E_tipo_trabajador/) | 6 |
+| [Comparabilidad y composición anual](resultados/tablas/08_comparabilidad/) | 4 |
+| [Selección de Heckman](resultados/tablas/10_Heckman/) | 4 |
+
+Los [logs](resultados/logs/) documentan ejecuciones previas aportadas por el autor. Las copias públicas omiten los listados de observaciones individuales y conservan las estimaciones y los resúmenes agregados.
 
 ## Ejecutar en Stata
 
@@ -49,7 +65,7 @@ Instale las dependencias desde la raíz del repositorio:
 python -m pip install -r requirements.txt
 ```
 
-Una vez incorporadas las tablas del segundo bloque, el siguiente comando genera siete figuras con resultados agregados:
+El siguiente comando utiliza las tablas incluidas para generar siete figuras con resultados agregados:
 
 ```bash
 python python/graficos_enaho.py
@@ -65,7 +81,7 @@ Consulte [los datos requeridos](datos/README.md) y [la trazabilidad](docs/trazab
 
 ## Validación y alcance
 
-La generación de las siete figuras con tablas agregadas se comprobó con las salidas recibidas antes de publicar el código. Las tablas se incorporarán en el siguiente bloque.
+Se comprobaron la estructura de las 27 tablas, el rango de sus valores p y el orden de los intervalos disponibles. Los CSV conservan los valores exportados por Stata. La generación de las siete figuras se verificó con las tablas incluidas.
 
 Las copias Stata adaptan las rutas y añaden una comprobación de configuración; la lógica estadística aportada se conserva. Su ejecución integral sigue pendiente. Los resultados documentados corresponden a ejecuciones previas del autor.
 
